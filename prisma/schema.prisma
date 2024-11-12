@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Ptinfo {
+  ptnumber  Int        @unique
+  ptname    String
+  ptage     Int
+  bith      DateTime
+  sex       String
+  id        Int        @id @default(autoincrement())
+  reports   Report[]   @relation("PtinfoReports")
+  schedules schedule[] @relation("PtinfoSchedules")
+}
+
+model Report {
+  examdate     DateTime
+  ptnumber     Int
+  modality     String
+  docor        Int
+  department   String
+  clinicaldiag String
+  imagediag    String
+  report       String
+  finaldiag    String
+  interesting  String
+  inputby      String
+  inputdate    DateTime
+  site         String
+  inputtime    DateTime
+  id           Int      @id @default(autoincrement())
+  examdetail   String
+  dicomid      Int
+  pspnumber    String
+  ptinfo       Ptinfo   @relation("PtinfoReports", fields: [ptnumber], references: [ptnumber])
+  doctor       Doctor   @relation("ReportDoctor", fields: [docor], references: [docid])
+}
+
+model Doctor {
+  docname    String
+  department String
+  password   String
+  hostital   String
+  level      Int
+  docid      Int      @id @default(autoincrement())
+  reports    Report[] @relation("ReportDoctor")
+}
+
+model schedule {
+  ptid       Int
+  id         Int      @id @default(autoincrement())
+  examdate   DateTime
+  examtime   DateTime
+  department String
+  doctor     String
+  ivrname    String
+  memo       String
+  inputter   String
+  ptinfo     Ptinfo   @relation("PtinfoSchedules", fields: [ptid], references: [ptnumber])
+}

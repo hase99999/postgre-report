@@ -1,0 +1,56 @@
+// test_package.json.test.js
+const fs = require('fs');
+const path = require('path');
+
+describe('Package.json Configuration', () => {
+  let packageJson;
+
+  beforeAll(() => {
+    const packageJsonPath = path.join(__dirname, 'package.json');
+    packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  });
+
+  test('has valid name', () => {
+    expect(packageJson.name).toBe('postgre-sql');
+    expect(typeof packageJson.name).toBe('string');
+  });
+
+  test('has valid version', () => {
+    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  test('has required scripts', () => {
+    expect(packageJson.scripts).toHaveProperty('start');
+    expect(packageJson.scripts).toHaveProperty('dev');
+    expect(packageJson.scripts).toHaveProperty('test');
+    expect(packageJson.scripts).toHaveProperty('build');
+  });
+
+  test('has valid main entry point', () => {
+    expect(packageJson.main).toBe('server.js');
+  });
+
+  test('dependencies have valid version formats', () => {
+    Object.values(packageJson.dependencies).forEach(version => {
+      expect(version).toMatch(/^\^?\d+\.\d+\.\d+$/);
+    });
+  });
+
+  test('devDependencies have valid version formats', () => {
+    Object.values(packageJson.devDependencies).forEach(version => {
+      expect(version).toMatch(/^\^?\d+\.\d+\.\d+$/);
+    });
+  });
+
+  test('has required development dependencies', () => {
+    expect(packageJson.devDependencies).toHaveProperty('jest');
+    expect(packageJson.devDependencies).toHaveProperty('@testing-library/react');
+    expect(packageJson.devDependencies).toHaveProperty('webpack');
+  });
+
+  test('has required runtime dependencies', () => {
+    expect(packageJson.dependencies).toHaveProperty('react');
+    expect(packageJson.dependencies).toHaveProperty('express');
+    expect(packageJson.dependencies).toHaveProperty('@prisma/client');
+  });
+});
