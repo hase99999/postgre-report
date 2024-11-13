@@ -14,10 +14,10 @@ datasource db {
 }
 
 model Ptinfo {
-  ptnumber  Int        @unique
+  ptnumber  BigInt        @unique
   ptname    String
   ptage     Int
-  bith      DateTime
+  bith      DateTime?
   sex       String
   id        Int        @id @default(autoincrement())
   reports   Report[]   @relation("PtinfoReports")
@@ -26,7 +26,7 @@ model Ptinfo {
 
 model Report {
   examdate     DateTime
-  ptnumber     Int
+  ptnumber     BigInt
   modality     String
   docor        Int
   department   String
@@ -58,7 +58,7 @@ model Doctor {
 }
 
 model schedule {
-  ptid       Int
+  ptid       BigInt
   id         Int      @id @default(autoincrement())
   examdate   DateTime
   examtime   DateTime

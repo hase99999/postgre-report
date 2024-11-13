@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const Ptinfo = () => {
   const [ptinfos, setPtinfos] = useState([]);
-  const [form, setForm] = useState({ name: '', age: '', condition: '' });
+  const [form, setForm] = useState({ ptname: '', ptage: '', condition: '' });
   const [error, setError] = useState(null);
 
   const fetchPtinfos = async () => {
@@ -36,7 +36,7 @@ const Ptinfo = () => {
     try {
       await axios.post('/api/ptinfos', form);
       fetchPtinfos();
-      setForm({ name: '', age: '', condition: '' });
+      setForm({ ptname: '', ptage: '', condition: '' });
     } catch (error) {
       console.error('Error adding patient information:', error);
       setError('Error adding patient information');
@@ -58,15 +58,15 @@ const Ptinfo = () => {
       <h2>Patient Information</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
-        <input name="name" value={form.name} onChange={handleChange} placeholder="Name" />
-        <input name="age" value={form.age} onChange={handleChange} placeholder="Age" />
+        <input name="ptname" value={form.ptname} onChange={handleChange} placeholder="Name" />
+        <input name="ptage" value={form.ptage} onChange={handleChange} placeholder="Age" />
         <input name="condition" value={form.condition} onChange={handleChange} placeholder="Condition" />
         <button type="submit">Add Patient Information</button>
       </form>
       <ul>
         {ptinfos.map((ptinfo) => (
           <li key={ptinfo.id}>
-            {ptinfo.name} - {ptinfo.age} - {ptinfo.condition}
+            {ptinfo.ptname} - {ptinfo.ptage} - {ptinfo.condition}
             <button onClick={() => handleDelete(ptinfo.id)}>Delete</button>
           </li>
         ))}

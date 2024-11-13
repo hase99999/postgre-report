@@ -4,6 +4,7 @@ import Home from './components/Home';
 import Report from './components/Report';
 import Doctor from './components/Doctor';
 import Ptinfo from './components/Ptinfo';
+import PtinfoImport from './components/PtinfoImport';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/reports" element={<Report />} />
         <Route path="/doctors" element={<Doctor />} />
         <Route path="/ptinfos" element={<Ptinfo />} />
+        <Route path="/import" element={<PtinfoImport />} />
       </Routes>
     </Router>
   );
