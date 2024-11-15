@@ -1,76 +1,66 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Ptinfo = () => {
   const [ptinfos, setPtinfos] = useState([]);
-  const [form, setForm] = useState({ ptname: '', ptage: '', condition: '' });
-  const [error, setError] = useState(null);
-
-  const fetchPtinfos = async () => {
-    try {
-      const response = await axios.get('/api/ptinfos');
-      console.log('API response:', response.data);
-      if (Array.isArray(response.data)) {
-        setPtinfos(response.data);
-      } else {
-        console.error('Expected an array but got:', response.data);
-        setError('Invalid data format');
-      }
-    } catch (error) {
-      console.error('Error fetching patient information:', error);
-      setError('Error fetching patient information');
-    }
-  };
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 100; // 1ページあたりの表示件数
 
   useEffect(() => {
-    console.log('Fetching patient information...');
+    const fetchPtinfos = async () => {
+      try {
+        const response = await axios.get('/api/ptinfos', {
+          params: { page, limit },
+        });
+        setPtinfos(response.data.ptinfos);
+        setTotal(response.data.total);
+      } catch (error) {
+        console.error('Error fetching patient information:', error);
+      }
+    };
+
     fetchPtinfos();
-  }, []);
+  }, [page]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('/api/ptinfos', form);
-      fetchPtinfos();
-      setForm({ ptname: '', ptage: '', condition: '' });
-    } catch (error) {
-      console.error('Error adding patient information:', error);
-      setError('Error adding patient information');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/api/ptinfos/${id}`);
-      fetchPtinfos();
-    } catch (error) {
-      console.error('Error deleting patient information:', error);
-      setError('Error deleting patient information');
-    }
-  };
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div>
       <h2>Patient Information</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input name="ptname" value={form.ptname} onChange={handleChange} placeholder="Name" />
-        <input name="ptage" value={form.ptage} onChange={handleChange} placeholder="Age" />
-        <input name="condition" value={form.condition} onChange={handleChange} placeholder="Condition" />
-        <button type="submit">Add Patient Information</button>
-      </form>
-      <ul>
-        {ptinfos.map((ptinfo) => (
-          <li key={ptinfo.id}>
-            {ptinfo.ptname} - {ptinfo.ptage} - {ptinfo.condition}
-            <button onClick={() => handleDelete(ptinfo.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <table>
+        <thead>
+          <tr>
+            <th>Pt Number</th>
+            <th>Pt Name</th>
+            <th>Pt Age</th>
+            <th>Birth</th>
+            <th>Sex</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ptinfos.map((ptinfo) => (
+            <tr key={ptinfo.id}>
+              <td>{ptinfo.ptnumber}</td>
+              <td>{ptinfo.ptname}</td>
+              <td>{ptinfo.ptage}</td>
+              <td>{ptinfo.bith}</td>
+              <td>{ptinfo.sex}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div>
+        <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+          Previous
+        </button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <button onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+          Next
+        </button>
+      </div>
     </div>
   );
 };

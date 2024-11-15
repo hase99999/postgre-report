@@ -15,6 +15,10 @@ const PtinfoImport = () => {
 
   const handleJsonSubmit = async (e) => {
     e.preventDefault();
+    if (!jsonFile) {
+      alert('Please select a JSON file.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (event) => {
       const jsonData = JSON.parse(event.target.result);
@@ -35,6 +39,10 @@ const PtinfoImport = () => {
 
   const handleCsvSubmit = async (e) => {
     e.preventDefault();
+    if (!csvFile) {
+      alert('Please select a CSV file.');
+      return;
+    }
     const formData = new FormData();
     formData.append('file', csvFile);
     try {

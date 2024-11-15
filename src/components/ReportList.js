@@ -1,77 +1,51 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const ReportList = () => {
   const [reports, setReports] = useState([]);
-  const [newReport, setNewReport] = useState({ name: '', site: '', inputtime: '' });
-  const [error, setError] = useState(null);
-
-  const fetchReports = async () => {
-    try {
-      const response = await axios.get('/api/reports');
-      console.log('API response:', response.data);
-      if (Array.isArray(response.data)) {
-        setReports(response.data);
-      } else {
-        console.error('Expected an array but got:', response.data);
-        setError('Invalid data format');
-      }
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-      setError('Error fetching reports');
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Fetching reports...');
+    const fetchReports = async () => {
+      try {
+        const response = await axios.get('/api/reports');
+        setReports(response.data);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+      }
+    };
+
     fetchReports();
   }, []);
 
-  const handleChange = (e) => {
-    setNewReport({ ...newReport, [e.target.name]: e.target.value });
+  const handleDetailClick = (reportId) => {
+    navigate(`/report/${reportId}`);
   };
 
-  const handleAdd = async () => {
-    try {
-      await axios.post('/api/reports', newReport);
-      fetchReports();
-      setNewReport({ name: '', site: '', inputtime: '' });
-    } catch (error) {
-      console.error('Error adding report:', error);
-      setError('Error adding report');
+  const handleDeleteClick = async (reportId) => {
+    const confirmDelete = window.confirm('本当にこのレポートを削除しますか？');
+    if (confirmDelete) {
+      try {
+        await axios.delete(`/api/reports/${reportId}`);
+        setReports(reports.filter(report => report.id !== reportId));
+        alert('レポートが削除されました');
+      } catch (error) {
+        console.error('Error deleting report:', error);
+        alert('レポートの削除中にエラーが発生しました');
+      }
     }
   };
 
   return (
     <div>
-      <h1>Reports</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <input
-        type="text"
-        name="name"
-        placeholder="Enter report name"
-        value={newReport.name}
-        onChange={handleChange}
-      />
-      <input
-        type="text"
-        name="site"
-        placeholder="Enter site"
-        value={newReport.site}
-        onChange={handleChange}
-      />
-      <input
-        type="text"
-        name="inputtime"
-        placeholder="Enter input time"
-        value={newReport.inputtime}
-        onChange={handleChange}
-      />
-      <button onClick={handleAdd}>Add Report</button>
+      <h1>Report List</h1>
       <ul>
         {reports.map((report) => (
           <li key={report.id}>
-            {report.name} - {report.site} - {report.inputtime}
+            <span>{report.examdate} - {report.ptnumber} - {report.modality} - {report.docor} - {report.department}</span>
+            <button onClick={() => handleDetailClick(report.id)}>詳細</button>
+            <button onClick={() => handleDeleteClick(report.id)}>削除</button>
           </li>
         ))}
       </ul>

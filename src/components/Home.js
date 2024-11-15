@@ -4,20 +4,23 @@ import { Link } from 'react-router-dom';
 const Home = () => {
   return (
     <div>
-      <h1>Home Page</h1>
+      <h1>Home</h1>
       <nav>
         <ul>
           <li>
-            <Link to="/reports">Go to Reports</Link>
+            <Link to="/reports">Reports</Link>
           </li>
           <li>
-            <Link to="/doctors">Go to Doctors</Link>
+            <Link to="/doctors">Doctors</Link>
           </li>
           <li>
-            <Link to="/ptinfos">Go to Patient Information</Link>
+            <Link to="/ptinfos">Patient Information</Link>
           </li>
           <li>
-            <Link to="/import">Go to Import Patient Information</Link>
+            <Link to="/import">Import Patient Information</Link>
+          </li>
+          <li>
+            <Link to="/import/report">Import Report Information</Link>
           </li>
         </ul>
       </nav>
