@@ -1,0 +1,61 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Ptinfo {
+  ptnumber  Int        @unique
+  ptname    String
+  ptage     Int
+  birth     DateTime?
+  sex       String
+  id        Int        @id @default(autoincrement())
+  reports   Report[]   @relation("PtinfoReports")
+  schedules Schedule[] @relation("PtinfoSchedules")
+}
+
+model Report {
+  id            Int      @id @default(autoincrement())
+  examdate      DateTime
+  ptnumber      Int
+  modality      String?
+  doctor        String?
+  department    String
+  clinicaldiag  String
+  imagediag     String
+  report        String
+  finaldiag     String
+  interesting   String
+  inputby       String
+  inputdate     DateTime
+  site          String
+  inputtime     DateTime
+  ptinfo        Ptinfo?   @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoReports")
+}
+
+model Doctor {
+  docname        String
+  department     String
+  password       String
+  hospital       String
+  level          Int
+  employeeNumber String
+  docid          Int    @id @default(autoincrement())
+}
+
+model Schedule {
+  id            Int      @id @default(autoincrement())
+  examdate      DateTime?
+  examtime      DateTime?
+  ptnumber      Int?
+  department    String
+  doctor        String
+  ivrname       String?
+  memo          String?
+  inputter      String?
+  ptinfo        Ptinfo?   @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
+}

@@ -1,0 +1,32 @@
+/* ここにスタイルを追加します */
+body {
+    font-family: Arial, sans-serif;
+  }
+  
+  h1 {
+    color: #333;
+  }
+  
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* ヘッダーのスタイル */
+thead tr {
+  background-color: #f8f8f8;
+}
+
+/* 行のホバー時のスタイル */
+tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* 選択された行のスタイル */
+tbody tr.selected {
+  background-color: #d1e7ff;
+}
