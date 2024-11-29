@@ -42,9 +42,10 @@ router.get('/', async (req, res) => {
 // 特定のレポートを取得するAPI
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
+  console.log(`Received request for report with ID: ${id}`); // req.paramsの内容をログ表示
   try {
     const report = await prisma.report.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id, 10) },
       select: {
         id: true,
         examdate: true,

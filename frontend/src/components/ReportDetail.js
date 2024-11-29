@@ -26,7 +26,7 @@ const ReportDetail = () => {
   }, [id]);
 
   const handleBack = () => {
-    navigate('/reports');
+    navigate(-1);
   };
 
   if (error) {
@@ -46,20 +46,32 @@ const ReportDetail = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">レポート詳細</h1>
       <div className="bg-white shadow-md rounded p-4">
-        <div className="mb-4">
-          <span className="font-semibold">検査日:</span> {isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <span className="font-semibold">検査日:</span> <span className="font-semibold p-2">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</span>
+        
+            <span className="font-semibold">モダリティ:</span> <span className="font-semibold">{report.modality}</span>
+          </div>
+          <div>
+            <span className="font-semibold">患者番号:</span> <span className="font-semibold p-2">{report.ptnumber}</span>
+          
+            <span className="font-semibold p-2">患者名:</span> <span className="font-semibold">{report.ptinfo.ptname}</span>
+          </div>
+          <div>
+            <span className="font-semibold">部門:</span> <span className="p-1">{report.department}</span>
+         
+            <span className="font-semibold p-2">担当医:</span> <span className="font-semibold">{report.doctor}</span>
+          </div>
         </div>
         <div className="mb-4">
-          <span className="font-semibold">モダリティ:</span> {report.modality}
+          <span className="font-semibold">臨床診断:</span> <span className="font-semibold">{report.clinicaldiag}</span>
+        </div>
+  
+        <div className="mb-4">
+          <span className="font-semibold">レポート:</span> <span className="font-semibold">{report.report}</span>
         </div>
         <div className="mb-4">
-          <span className="font-semibold">ドクター:</span> {report.doctor}
-        </div>
-        <div className="mb-4">
-          <span className="font-semibold">部門:</span> {report.department}
-        </div>
-        <div className="mb-4">
-          <span className="font-semibold">画像診断:</span> {report.imagediag}
+          <span className="font-semibold">画像診断:</span> <span className="font-semibold">{report.imagediag}</span>
         </div>
         <div className="flex justify-between mt-4">
           <button

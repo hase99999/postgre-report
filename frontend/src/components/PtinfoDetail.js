@@ -31,6 +31,12 @@ const PtinfoDetail = () => {
     const page = query.get('page') || 1;
     console.log(`Navigating back to /ptinfos?page=${page}`); // デバッグ用
     navigate(`/ptinfos?page=${page}`);
+    window.location.reload(); 
+  };
+
+  const handleReportClick = (reportId) => {
+    console.log(`Navigating to report with ID: ${reportId}`); // ログを追加
+    navigate(`/report/${reportId}`);
   };
 
   if (error) {
@@ -64,17 +70,26 @@ const PtinfoDetail = () => {
         </div>
         <div className="mb-4">
           <span className="font-semibold">レポート:</span>
-          <ul>
-            {(ptinfo.reports || []).map((report) => (
-              <li key={report.id} className="mb-2">
-                <div>検査日: {isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</div>
-                <div>モダリティ: {report.modality}</div>
-                <div>ドクター: {report.doctor}</div>
-                <div>部門: {report.department}</div>
-                <div>画像診断: {report.imagediag}</div>
-              </li>
-            ))}
-          </ul>
+          <table className="min-w-full bg-white">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="py-2 px-4 border-b">検査日</th>
+                <th className="py-2 px-4 border-b">ドクター</th>
+                <th className="py-2 px-4 border-b">部門</th>
+                <th className="py-2 px-4 border-b">画像診断</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(ptinfo.reports || []).map((report) => (
+                <tr key={report.id} className="hover:bg-gray-100 cursor-pointer" onClick={() => handleReportClick(report.id)}>
+                  <td className="py-2 px-4 border-b">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</td>
+                  <td className="py-2 px-4 border-b">{report.doctor}</td>
+                  <td className="py-2 px-4 border-b">{report.department}</td>
+                  <td className="py-2 px-4 border-b">{report.imagediag}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         <div className="flex justify-between mt-4">
           <button
