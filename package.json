@@ -5,10 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "webpack serve --mode development",
+   "start": "webpack serve --config frontend/webpack.config.js --mode development",
     "dev": "nodemon server.js",
     "frontend": "webpack serve --config webpack.config.js --mode development --open",
-    "build": "webpack --config webpack.config.js --mode production",
+   "build": "webpack --config frontend/webpack.config.js --mode production",
     "test": "jest",
     "eject": "react-scripts eject",
     "lint": "eslint 'src/**/*.{js,jsx}'"

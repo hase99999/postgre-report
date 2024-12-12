@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, isValid, differenceInYears } from 'date-fns';
@@ -23,21 +23,36 @@ const PtinfoList = () => {
   }, [location.search]);
 
   useEffect(() => {
+    let isMounted = true; // マウント状態を管理
+    const controller = new AbortController(); // 重複リクエスト防止
+
     const fetchPtinfos = async () => {
       try {
+        console.log('Fetching ptinfos with page:', page); // デバッグ用
+        const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
         const response = await axios.get('/api/ptinfos', {
-          params: { page, limit, searchTerm: searchQuery },
+          params: { page, limit, searchTerm: searchQuery, _t: timestamp },
+          signal: controller.signal,
         });
-        console.log('Fetched ptinfos from DB:', response.data); // デバッグ用
-        setPtinfos(response.data.ptinfos);
-        setTotal(response.data.total);
+        if (isMounted) {
+          console.log('Fetched ptinfos:', response.data); // デバッグ用
+          setPtinfos(response.data.ptinfos);
+          setTotal(response.data.total);
+        }
       } catch (error) {
-        console.error('Error fetching ptinfos:', error);
+        if (error.name !== 'CanceledError') {
+          console.error('Error fetching ptinfos:', error);
+        }
       }
     };
 
     fetchPtinfos();
-  }, [page, limit, searchQuery]);
+
+    return () => {
+      isMounted = false; // アンマウント時に状態を更新
+      controller.abort(); // 不要なリクエストをキャンセル
+    };
+  }, [page, limit, searchQuery]); // page、limit、searchQueryが変更されたときに実行
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -105,7 +120,6 @@ const PtinfoList = () => {
             ptinfos.map((ptinfo) => {
               const birthdate = new Date(ptinfo.birth);
               const isValidBirthdate = isValid(birthdate);
-             // console.log('誕生日：',String(birthdate));
               return (
                 <tr
                   key={ptinfo.ptnumber}

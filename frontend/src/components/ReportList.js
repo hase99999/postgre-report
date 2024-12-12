@@ -1,48 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { format } from 'date-fns';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { format, isValid } from 'date-fns';
 
 const ReportList = () => {
   const [reports, setReports] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => {
+    const query = new URLSearchParams(window.location.search);
+    return parseInt(query.get('page'), 10) || 1;
+  });
   const [limit] = useState(10);
-  const [selectedRow, setSelectedRow] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const pageParam = query.get('page');
+    console.log('Current page param:', pageParam); // デバッグ用
     if (pageParam && pageParam !== page.toString()) {
       setPage(parseInt(pageParam, 10));
     }
   }, [location.search]);
 
   useEffect(() => {
+    let isMounted = true; // マウント状態を管理
+    const controller = new AbortController(); // 重複リクエスト防止
+
     const fetchReports = async () => {
       try {
+        console.log('Fetching reports with page:', page); // デバッグ用
+        const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
         const response = await axios.get('/api/reports', {
-          params: { page, limit },
+          params: { page, limit, _t: timestamp },
+          signal: controller.signal,
         });
-        console.log('Response data:', response.data); // デバッグ用
-        setReports(response.data.reports);
-        setTotal(response.data.total);
+        if (isMounted) {
+          console.log('Fetched reports:', response.data); // デバッグ用
+          setReports(response.data.reports);
+          setTotal(response.data.total);
+        }
       } catch (error) {
-        console.error('Error fetching reports:', error);
+        if (error.name !== 'CanceledError') {
+          console.error('Error fetching reports:', error);
+        }
       }
     };
 
     fetchReports();
-  }, [page, limit]);
 
-  const handleRowDoubleClick = (id) => {
-    navigate(`/report/${id}?page=${page}`);
-  };
+    return () => {
+      isMounted = false; // アンマウント時に状態を更新
+      controller.abort(); // 不要なリクエストをキャンセル
+    };
+  }, [page, limit]); // pageまたはlimitが変更されたときに実行
 
   const handleRowClick = (id) => {
-    setSelectedRow(id);
+    navigate(`/report/${id}?page=${page}`);
   };
 
   const handlePreviousPage = () => {
@@ -82,15 +96,8 @@ const ReportList = () => {
         <tbody>
           {reports.length > 0 ? (
             reports.map((report) => (
-              <tr
-                key={report.id}
-                className={`hover:bg-gray-100 ${selectedRow === report.id ? 'selected' : ''}`}
-                onDoubleClick={() => handleRowDoubleClick(report.id)}
-                onClick={() => handleRowClick(report.id)}
-              >
-                <td className="py-2 px-4 border-b">
-                  {format(new Date(report.examdate), 'yyyy/MM/dd')}
-                </td>
+              <tr key={report.id} className="hover:bg-gray-100 cursor-pointer" onDoubleClick={() => handleRowClick(report.id)}>
+                <td className="py-2 px-4 border-b">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</td>
                 <td className="py-2 px-4 border-b">{report.ptnumber}</td>
                 <td className="py-2 px-4 border-b">{report.ptinfo.ptname}</td>
                 <td className="py-2 px-4 border-b">{report.modality}</td>
@@ -100,7 +107,7 @@ const ReportList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="py-2 px-4 border-b text-center">レポートがありません</td>
+              <td colSpan="6" className="py-2 px-4 border-b text-center">該当するレポートがありません</td>
             </tr>
           )}
         </tbody>
@@ -113,22 +120,17 @@ const ReportList = () => {
         >
           前のページ
         </button>
-        <span className="text-xl font-semibold">
-          {page} / {Math.ceil(total / limit)}
-        </span>
+        <span className="text-xl font-semibold">ページ {page}</span>
         <button
           onClick={handleNextPage}
-          disabled={page === Math.ceil(total / limit)}
+          disabled={page * limit >= total}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           次のページ
         </button>
       </div>
-      <div className="flex justify-between mt-4">
-        <button
-          onClick={handleHome}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-        >
+      <div className="flex justify-center mt-4">
+        <button onClick={handleHome} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
           ホームに戻る
         </button>
       </div>

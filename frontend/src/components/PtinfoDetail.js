@@ -31,12 +31,11 @@ const PtinfoDetail = () => {
     const page = query.get('page') || 1;
     console.log(`Navigating back to /ptinfos?page=${page}`); // デバッグ用
     navigate(`/ptinfos?page=${page}`);
-    window.location.reload(); 
   };
 
   const handleReportClick = (reportId) => {
     console.log(`Navigating to report with ID: ${reportId}`); // ログを追加
-    navigate(`/report/${reportId}`);
+    navigate(`/report/${reportId}?ptnumber=${ptnumber}`);
   };
 
   if (error) {
@@ -74,6 +73,7 @@ const PtinfoDetail = () => {
             <thead>
               <tr className="bg-gray-200">
                 <th className="py-2 px-4 border-b">検査日</th>
+                <th className="py-2 px-4 border-b">モダリティ</th>
                 <th className="py-2 px-4 border-b">ドクター</th>
                 <th className="py-2 px-4 border-b">部門</th>
                 <th className="py-2 px-4 border-b">画像診断</th>
@@ -83,6 +83,7 @@ const PtinfoDetail = () => {
               {(ptinfo.reports || []).map((report) => (
                 <tr key={report.id} className="hover:bg-gray-100 cursor-pointer" onClick={() => handleReportClick(report.id)}>
                   <td className="py-2 px-4 border-b">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</td>
+                  <td className="py-2 px-4 border-b">{report.modality}</td>
                   <td className="py-2 px-4 border-b">{report.doctor}</td>
                   <td className="py-2 px-4 border-b">{report.department}</td>
                   <td className="py-2 px-4 border-b">{report.imagediag}</td>

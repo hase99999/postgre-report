@@ -1,8 +1,8 @@
 import express from 'express';
-import fs from 'fs';
+import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import xml2js from 'xml2js';
-import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -10,27 +10,26 @@ const upload = multer({ dest: 'uploads/' });
 
 // レポート一覧を取得するAPI
 router.get('/', async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, ptnumber } = req.query;
+  console.log('Received query params:', { page, limit, ptnumber }); // デバッグ用
   const offset = (page - 1) * limit;
+
   try {
+    const where = ptnumber ? { ptnumber: parseInt(ptnumber, 10) } : {};
+
     const reports = await prisma.report.findMany({
-      skip: parseInt(offset),
-      take: parseInt(limit),
-      select: {
-        id: true,
-        examdate: true,
-        ptnumber: true,
+      skip: parseInt(offset, 10),
+      take: parseInt(limit, 10),
+      where,
+      include: {
         ptinfo: {
           select: {
             ptname: true,
           },
         },
-        modality: true,
-        department: true,
-        imagediag: true,
       },
     });
-    const total = await prisma.report.count();
+    const total = await prisma.report.count({ where });
     console.log('Fetched reports from DB:', reports); // デバッグ用
     res.json({ reports, total });
   } catch (err) {
@@ -42,7 +41,7 @@ router.get('/', async (req, res) => {
 // 特定のレポートを取得するAPI
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  console.log(`Received request for report with ID: ${id}`); // req.paramsの内容をログ表示
+  console.log(`Received request for report with ID: ${id}`); // デバッグ用
   try {
     const report = await prisma.report.findUnique({
       where: { id: parseInt(id, 10) },
@@ -57,11 +56,13 @@ router.get('/:id', async (req, res) => {
         },
         modality: true,
         department: true,
+        clinicaldiag: true,
         imagediag: true,
         report: true,
       },
     });
     if (!report) {
+      console.error('Report not found for ID:', id); // デバッグ用
       return res.status(404).json({ error: 'Report not found' });
     }
     console.log('Fetched report from DB:', report); // デバッグ用
@@ -72,8 +73,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-
-/// XMLファイルからレポート情報をインポートするAPI
+// XMLファイルからレポート情報をインポートするAPI
 router.post('/report/xml', upload.single('file'), async (req, res) => {
   try {
     console.log('Received file:', req.file); // デバッグ情報を追加

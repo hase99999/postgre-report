@@ -3,9 +3,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.js',
+  entry: './frontend/src/index.js', // エントリーポイントのパスを修正
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'frontend/dist'), // 出力ディレクトリのパスを修正
     filename: 'bundle.js',
   },
   module: {
@@ -25,13 +25,13 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './public/index.html',
+      template: './frontend/public/index.html', // HTMLテンプレートのパスを修正
       filename: 'index.html',
     }),
   ],
   devServer: {
     static: {
-      directory: path.join(__dirname, 'public'),
+      directory: path.join(__dirname, 'frontend/public'), // 開発サーバーのコンテンツベースのパスを修正
     },
     compress: true,
     port: 3000,

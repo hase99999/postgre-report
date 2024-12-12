@@ -35,11 +35,11 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ルートの設定
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/ptinfos', ptinfoRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/schedules', scheduleRoutes);
-app.use('/api/import', importRoutes); // ここでimportRoutesを設定
+app.use('/api/doctors', authMiddleware, doctorRoutes);
+app.use('/api/ptinfos', authMiddleware, ptinfoRoutes);
+app.use('/api/reports', authMiddleware, reportRoutes);
+app.use('/api/schedules', authMiddleware, scheduleRoutes);
+app.use('/api/import', authMiddleware, importRoutes);
 app.use('/api/auth', authRoutes);
 
 // 認証が必要なエンドポイントにミドルウェアを適用

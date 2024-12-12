@@ -5,8 +5,8 @@ import PtinfoList from './components/PtinfoList';
 import PtinfoDetail from './components/PtinfoDetail';
 import DoctorList from './components/DoctorList';
 import DoctorDetail from './components/DoctorDetail';
-import ReportList from './components/ReportList'; // 追加
-import ReportDetail from './components/ReportDetail'; // 追加
+import ReportList from './components/ReportList';
+import ReportDetail from './components/ReportDetail';
 import Login from './components/Login';
 import Home from './components/Home';
 import PtinfoImport from './components/PtinfoImport';
@@ -15,6 +15,7 @@ import DoctorImport from './components/DoctorImport';
 import ScheduleImport from './components/ScheduleImport';
 import ScheduleList from './components/ScheduleList';
 import ScheduleDetail from './components/ScheduleDetail';
+import Logout from './components/Logout'; // 追加
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/import/schedule" element={<PrivateRoute element={ScheduleImport} />} />
         <Route path="/schedules" element={<PrivateRoute element={ScheduleList} />} />
         <Route path="/schedule/:id" element={<PrivateRoute element={ScheduleDetail} />} />
+        <Route path="/logout" element={<Logout />} /> {/* 追加 */}
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
