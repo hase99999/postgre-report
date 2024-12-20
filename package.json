@@ -5,10 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-   "start": "webpack serve --config frontend/webpack.config.js --mode development",
+    "start": "webpack serve --config frontend/webpack.config.js --mode development",
     "dev": "nodemon server.js",
     "frontend": "webpack serve --config webpack.config.js --mode development --open",
-   "build": "webpack --config frontend/webpack.config.js --mode production",
+    "build": "webpack --config frontend/webpack.config.js --mode production",
     "test": "jest",
     "eject": "react-scripts eject",
     "lint": "eslint 'src/**/*.{js,jsx}'"
@@ -18,10 +18,11 @@
   "license": "ISC",
   "dependencies": {
     "@craco/craco": "^7.1.0",
-    "@prisma/client": "^5.21.1",
+    "@prisma/client": "^5.22.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.3",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "cors": "^2.8.5",
@@ -30,8 +31,8 @@
     "customize-cra": "^1.0.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "path-browserify": "^1.0.1",
@@ -67,8 +68,8 @@
     "nodemon": "^3.1.7",
     "style-loader": "^4.0.0",
     "web-streams-polyfill": "^4.0.0",
-    "webpack": "^5.96.1",
+    "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.2.0"
   }
 }

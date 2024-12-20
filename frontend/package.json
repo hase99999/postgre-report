@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "webpack serve --mode development",
+    "start": "webpack serve --config webpack.config.js",
     "build": "webpack --mode production",
     "server": "node server.js",
     "dev": "nodemon server.js"
   },
+  "proxy": "http://localhost:3001",
   "dependencies": {
     "autoprefixer": "^10.4.20",
-    "axios": "^0.21.1",
+    "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "postcss": "^8.4.49",

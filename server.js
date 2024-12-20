@@ -1,40 +1,43 @@
+// server.js
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { PrismaClient } from '@prisma/client';
+import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+
+// 環境変数の設定
 dotenv.config();
 
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import bodyParser from 'body-parser';
-import fs from 'fs';
-import multer from 'multer';
-import xml2js from 'xml2js';
-import { PrismaClient } from '@prisma/client';
+// authMiddlewareのインポート
+import authMiddleware from './middleware/authMiddleware.js';
+
+// ルートモジュールのインポート
 import doctorRoutes from './routes/doctorRoutes.js';
 import ptinfoRoutes from './routes/ptinfoRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import scheduleRoutes from './routes/scheduleRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import authMiddleware from './middleware/authMiddleware.js';
-import cors from 'cors';
-
-const prisma = new PrismaClient();
-const upload = multer({ dest: 'uploads/' });
+import fetchAndSaveDataRoutes from './routes/fetchAndSaveDataRoutes.js'; // インポート確認
 
 const app = express();
+const prisma = new PrismaClient();
 
-// __dirnameの代わりにimport.meta.urlを使用
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
 
-app.use(cors());
+app.use(cors(corsOptions));
+app.use(express.json());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// フロントエンドの静的ファイルを提供
-app.use(express.static(path.join(__dirname, 'public')));
-
 // ルートの設定
+app.use('/api/fetch-4d-data', fetchAndSaveDataRoutes); // エンドポイントのマッピング
 app.use('/api/doctors', authMiddleware, doctorRoutes);
 app.use('/api/ptinfos', authMiddleware, ptinfoRoutes);
 app.use('/api/reports', authMiddleware, reportRoutes);
@@ -42,16 +45,15 @@ app.use('/api/schedules', authMiddleware, scheduleRoutes);
 app.use('/api/import', authMiddleware, importRoutes);
 app.use('/api/auth', authRoutes);
 
-// 認証が必要なエンドポイントにミドルウェアを適用
-app.use('/api/protected', authMiddleware, (req, res) => {
-  res.json({ message: 'This is a protected route' });
-});
+// フロントエンドの静的ファイルを提供
+app.use(express.static(path.resolve('public')));
 
 // その他のリクエストはフロントエンドのindex.htmlを返す
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.resolve('public', 'index.html'));
 });
 
+// サーバーの起動
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

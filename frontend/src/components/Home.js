@@ -58,6 +58,9 @@ const Home = () => {
         <Link to="/schedules" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           スケジュール一覧
         </Link>
+        <Link to="/fetch-and-save" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+          4Dデータベースからデータをフェッチして保存
+        </Link>
       </div>
     </div>
   );
