@@ -8,12 +8,12 @@ generator client {
 }
 
 model Ptinfo {
+  id        Int        @id @default(autoincrement())
   ptnumber  Int        @unique
   ptname    String
   ptage     Int
   birth     DateTime?
   sex       String
-  id        Int        @id @default(autoincrement())
   reports   Report[]   @relation("PtinfoReports")
   schedules Schedule[] @relation("PtinfoSchedules")
 }
@@ -38,24 +38,24 @@ model Report {
 }
 
 model Doctor {
+  docid          Int      @id @default(autoincrement())
   docname        String
   department     String
   password       String
   hospital       String
   level          Int
   employeeNumber String
-  docid          Int    @id @default(autoincrement())
 }
 
 model Schedule {
-  id            Int      @id @default(autoincrement())
-  examdate      DateTime?
-  examtime      DateTime?
-  ptnumber      Int?
-  department    String
-  doctor        String
-  ivrname       String?
-  memo          String?
-  inputter      String?
-  ptinfo        Ptinfo?   @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
+  id         Int      @id @default(autoincrement())
+  examdate   DateTime
+  examtime   DateTime
+  ptnumber   Int
+  department String
+  doctor     String
+  ivrname    String?
+  memo       String?
+  inputter   String?
+  ptinfo     Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
 }

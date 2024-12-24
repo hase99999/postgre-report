@@ -16,6 +16,7 @@ import DoctorImport from './components/DoctorImport';
 import ScheduleImport from './components/ScheduleImport';
 import ScheduleList from './components/ScheduleList';
 import ScheduleDetail from './components/ScheduleDetail';
+import ScheduleForm from './components/ScheduleForm'; // スケジュール入力画面をインポート
 import Logout from './components/Logout';
 import FetchAndSaveData from './components/FetchAndSaveData';
 
@@ -41,26 +42,10 @@ function App() {
           } 
         />
         <Route 
-          path="/report/:id" 
+          path="/reports/:id" 
           element={
             <PrivateRoute>
               <ReportDetail />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/doctors" 
-          element={
-            <PrivateRoute>
-              <DoctorList />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/doctor/:docid" 
-          element={
-            <PrivateRoute>
-              <DoctorDetail />
             </PrivateRoute>
           } 
         />
@@ -73,7 +58,7 @@ function App() {
           } 
         />
         <Route 
-          path="/ptinfo/:ptnumber" 
+          path="/ptinfos/:id" 
           element={
             <PrivateRoute>
               <PtinfoDetail />
@@ -81,7 +66,23 @@ function App() {
           } 
         />
         <Route 
-          path="/import" 
+          path="/doctors" 
+          element={
+            <PrivateRoute>
+              <DoctorList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/doctors/:id" 
+          element={
+            <PrivateRoute>
+              <DoctorDetail />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/ptinfo-import" 
           element={
             <PrivateRoute>
               <PtinfoImport />
@@ -89,7 +90,7 @@ function App() {
           } 
         />
         <Route 
-          path="/import/report" 
+          path="/report-import" 
           element={
             <PrivateRoute>
               <ReportImport />
@@ -97,7 +98,7 @@ function App() {
           } 
         />
         <Route 
-          path="/import/doctor" 
+          path="/doctor-import" 
           element={
             <PrivateRoute>
               <DoctorImport />
@@ -105,7 +106,7 @@ function App() {
           } 
         />
         <Route 
-          path="/import/schedule" 
+          path="/schedule-import" 
           element={
             <PrivateRoute>
               <ScheduleImport />
@@ -121,7 +122,7 @@ function App() {
           } 
         />
         <Route 
-          path="/schedule/:id" 
+          path="/schedules/:id" 
           element={
             <PrivateRoute>
               <ScheduleDetail />
@@ -129,8 +130,12 @@ function App() {
           } 
         />
         <Route 
-          path="/logout" 
-          element={<Logout />} 
+          path="/schedule/new" 
+          element={
+            <PrivateRoute>
+              <ScheduleForm />
+            </PrivateRoute>
+          } 
         />
         <Route 
           path="/fetch-and-save" 
@@ -140,7 +145,15 @@ function App() {
             </PrivateRoute>
           } 
         />
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route 
+          path="/logout" 
+          element={
+            <PrivateRoute>
+              <Logout />
+            </PrivateRoute>
+          } 
+        />
+        <Route path="/" element={<Navigate to="/home" />} />
       </Routes>
     </Router>
   );

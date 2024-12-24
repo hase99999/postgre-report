@@ -83,6 +83,10 @@ const ScheduleList = () => {
     navigate('/home');
   };
 
+  const handleNewSchedule = () => {
+    navigate('/schedule/new');
+  };
+
   const count = schedules.length;
 
   return (
@@ -110,6 +114,9 @@ const ScheduleList = () => {
       <div className="mb-4">
         <span className="text-xl font-semibold">検査件数: {count}件</span>
       </div>
+      <button onClick={handleNewSchedule} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4">
+        新規入力
+      </button>
       <table className="min-w-full bg-white">
         <thead>
           <tr className="bg-gray-200">

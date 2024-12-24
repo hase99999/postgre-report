@@ -41,6 +41,28 @@ router.get('/', async (req, res) => {
   }
 });
 
+// スケジュールを追加するAPI
+router.post('/', async (req, res) => {
+  const { examdate, examtime, ptnumber, department, doctor, ivrname } = req.body;
+  try {
+    const newSchedule = await prisma.schedule.create({
+      data: {
+        examdate: new Date(examdate),
+        examtime: new Date(examtime),
+        ptnumber: parseInt(ptnumber), // ptnumberをIntに変換
+        department,
+        doctor,
+        ivrname,
+      },
+    });
+    console.log('Added new schedule to DB:', newSchedule); // デバッグ用
+    res.status(201).json(newSchedule);
+  } catch (err) {
+    console.error('Error adding schedule:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // 特定のスケジュールを取得するAPI
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
