@@ -1,64 +1,30 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Papa from 'papaparse';
+import xml2js from 'xml2js';
+import { useNavigate } from 'react-router-dom';
 
 const ReportImport = () => {
   const [csvFile, setCsvFile] = useState(null);
   const [jsonFile, setJsonFile] = useState(null);
   const [xmlFile, setXmlFile] = useState(null);
-  const [jsonFileName, setJsonFileName] = useState('ptinfos.json');
-  const [xmlFileName, setXmlFileName] = useState('reports.xml');
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
-  const handleCsvChange = (e) => {
-    setCsvFile(e.target.files[0]);
-  };
-
-  const handleJsonChange = (e) => {
-    setJsonFile(e.target.files[0]);
-  };
-
-  const handleXmlChange = (e) => {
-    setXmlFile(e.target.files[0]);
-  };
-
-  const handleJsonFileNameChange = (e) => {
-    setJsonFileName(e.target.value);
-  };
-
-  const handleXmlFileNameChange = (e) => {
-    setXmlFileName(e.target.value);
-  };
-
-  const handleCsvSubmit = async (e) => {
-    e.preventDefault();
-    if (!csvFile) {
-      alert('CSVファイルを選択してください');
-      return;
-    }
-    const formData = new FormData();
-    formData.append('file', csvFile);
-    try {
-      await axios.post('/api/import/report/csv', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      alert('CSV data imported successfully');
-    } catch (error) {
-      console.error('Error importing CSV data:', error);
-      alert('Error importing CSV data');
-    }
+  const handleFileChange = (e, setFile) => {
+    setFile(e.target.files[0]);
   };
 
   const handleJsonSubmit = async (e) => {
     e.preventDefault();
     if (!jsonFile) {
-      alert('JSONファイルを選択してください');
+      alert('Please select a JSON file.');
       return;
     }
     const formData = new FormData();
     formData.append('file', jsonFile);
     try {
-      await axios.post('/api/import/report/json', formData, {
+      await axios.post('/api/reports/import/json', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -70,39 +36,87 @@ const ReportImport = () => {
     }
   };
 
-  const handleXmlSubmit = async (e) => {
+  const handleCsvSubmit = async (e) => {
     e.preventDefault();
-    if (!xmlFile) {
-      alert('XMLファイルを選択してください');
+    if (!csvFile) {
+      alert('Please select a CSV file.');
       return;
     }
     const formData = new FormData();
-    formData.append('file', xmlFile);
+    formData.append('file', csvFile);
     try {
-      console.log('Sending XML data to http://localhost:3001/api/import/report/xml');
-      await axios.post('/api/import/report/xml', formData, {
+      await axios.post('/api/reports/import/csv', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      alert('XML data imported successfully');
+      alert('CSV data imported successfully');
     } catch (error) {
-      console.error('Error importing XML data:', error);
-      alert('Error importing XML data');
+      console.error('Error importing CSV data:', error);
+      alert('Error importing CSV data');
+    }
+  };
+
+  const handleXmlSubmit = async (e) => {
+    e.preventDefault();
+    if (!xmlFile) {
+      alert('Please select an XML file.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const parser = new xml2js.Parser();
+        const result = await parser.parseStringPromise(event.target.result);
+        const data = result.reports.report.map(item => ({
+          examdate: item.examdate[0],
+          ptnumber: item.ptnumber[0],
+          modality: item.modality[0],
+          doctor: item.doctor[0],
+          department: item.department[0],
+          clinicaldiag: item.clinicaldiag[0],
+          imagediag: item.imagediag[0],
+          report: item.report[0],
+          finaldiag: item.finaldiag[0],
+          interesting: item.interesting[0],
+          inputby: item.inputby[0],
+          inputdate: item.inputdate[0],
+          site: item.site[0],
+          inputtime: item.inputtime[0],
+        }));
+        await importData(data);
+      } catch (error) {
+        console.error('Error importing XML data:', error);
+        alert('Error importing XML data');
+      }
+    };
+    reader.readAsText(xmlFile);
+  };
+
+  const importData = async (data) => {
+    try {
+      const chunkSize = 100; // 分割するサイズ
+      for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        await axios.post('/api/reports/import', chunk);
+      }
+      alert('Data imported successfully');
+    } catch (error) {
+      console.error('Error importing data:', error);
+      alert('Error importing data');
     }
   };
 
   const handleJsonExport = async () => {
     try {
-      const response = await axios.get(`/api/export/ptinfo?filename=${jsonFileName}`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', jsonFileName);
-      document.body.appendChild(link);
-      link.click();
+      const response = await axios.get('/api/reports/export/json');
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'reports.json';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting JSON data:', error);
       alert('Error exporting JSON data');
@@ -111,57 +125,68 @@ const ReportImport = () => {
 
   const handleXmlExport = async () => {
     try {
-      const response = await axios.get(`/api/export/reports?filename=${xmlFileName}`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', xmlFileName);
-      document.body.appendChild(link);
-      link.click();
+      const response = await axios.get('/api/reports/export/xml');
+      const builder = new xml2js.Builder();
+      const xml = builder.buildObject(response.data);
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'reports.xml';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting XML data:', error);
       alert('Error exporting XML data');
     }
   };
 
+  const handleBack = () => {
+    navigate('/home');
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Import Report Information</h2>
-      <form onSubmit={handleJsonSubmit} className="mb-4">
-        <input type="file" accept=".json" onChange={handleJsonChange} className="mb-2" />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Import JSON</button>
+      <h1 className="text-3xl font-bold mb-4">レポートインポート</h1>
+      <form onSubmit={handleJsonSubmit}>
+        <div className="mb-4">
+          <label className="block mb-2">JSONファイルを選択してください:</label>
+          <input type="file" accept=".json" onChange={(e) => handleFileChange(e, setJsonFile)} />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          JSONインポート
+        </button>
       </form>
-      <form onSubmit={handleCsvSubmit} className="mb-4">
-        <input type="file" accept=".csv" onChange={handleCsvChange} className="mb-2" />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Import CSV</button>
+      <form onSubmit={handleCsvSubmit} className="mt-4">
+        <div className="mb-4">
+          <label className="block mb-2">CSVファイルを選択してください:</label>
+          <input type="file" accept=".csv" onChange={(e) => handleFileChange(e, setCsvFile)} />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          CSVインポート
+        </button>
       </form>
-      <form onSubmit={handleXmlSubmit} className="mb-4">
-        <input type="file" accept=".xml" onChange={handleXmlChange} className="mb-2" />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Import XML</button>
+      <form onSubmit={handleXmlSubmit} className="mt-4">
+        <div className="mb-4">
+          <label className="block mb-2">XMLファイルを選択してください:</label>
+          <input type="file" accept=".xml" onChange={(e) => handleFileChange(e, setXmlFile)} />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          XMLインポート
+        </button>
       </form>
-      <h2 className="text-2xl font-bold mb-4">Export Data</h2>
-      <div className="mb-4">
-        <input
-          type="text"
-          value={jsonFileName}
-          onChange={handleJsonFileNameChange}
-          placeholder="Enter JSON file name"
-          className="border p-2 mb-2 w-full"
-        />
-        <button onClick={handleJsonExport} className="bg-green-500 text-white px-4 py-2 rounded">Export Ptinfo to JSON</button>
+      <div className="mt-4">
+        <button onClick={handleJsonExport} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2">
+          JSONエクスポート
+        </button>
+        <button onClick={handleXmlExport} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          XMLエクスポート
+        </button>
       </div>
-      <div className="mb-4">
-        <input
-          type="text"
-          value={xmlFileName}
-          onChange={handleXmlFileNameChange}
-          placeholder="Enter XML file name"
-          className="border p-2 mb-2 w-full"
-        />
-        <button onClick={handleXmlExport} className="bg-green-500 text-white px-4 py-2 rounded">Export Reports to XML</button>
-      </div>
+      {message && <p className="mt-4">{message}</p>}
+      <button onClick={handleBack} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mt-4">
+        戻る
+      </button>
     </div>
   );
 };

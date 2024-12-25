@@ -111,12 +111,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 特定の患者情報を取得するAPI
+// 患者情報の詳細を取得するAPI
 router.get('/:ptnumber', async (req, res) => {
   const { ptnumber } = req.params;
+  console.log('ptnumber:', ptnumber); // デバッグ用
   try {
     const ptinfo = await prisma.ptinfo.findUnique({
-      where: { ptnumber: parseInt(ptnumber, 10) },
+      where: { ptnumber: parseInt(ptnumber) },
       include: {
         reports: {
           select: {
@@ -130,18 +131,17 @@ router.get('/:ptnumber', async (req, res) => {
         },
       },
     });
+
     if (!ptinfo) {
       return res.status(404).json({ error: 'Ptinfo not found' });
     }
-    console.log('Fetched ptinfo from DB:', ptinfo); // デバッグ用
 
     res.json(ptinfo);
-  } catch (err) {
-    console.error('Error fetching ptinfo:', err);
+  } catch (error) {
+    console.error('Error fetching ptinfo:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 // 患者情報を全削除するAPI
 router.delete('/all', async (req, res) => {
   try {

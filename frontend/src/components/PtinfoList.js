@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, isValid, differenceInYears } from 'date-fns';
@@ -63,7 +63,7 @@ const PtinfoList = () => {
   };
 
   const handleRowDoubleClick = (ptnumber) => {
-    navigate(`/ptinfo/${ptnumber}?page=${page}`);
+    navigate(`/ptinfos/${ptnumber}?page=${page}`);
   };
 
   const handleRowClick = (ptnumber) => {

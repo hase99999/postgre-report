@@ -48,14 +48,14 @@ model Doctor {
 }
 
 model Schedule {
-  id         Int      @id @default(autoincrement())
-  examdate   DateTime
-  examtime   DateTime
-  ptnumber   Int
-  department String
-  doctor     String
-  ivrname    String?
-  memo       String?
-  inputter   String?
-  ptinfo     Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
+  id                Int      @id @default(autoincrement())
+  examstartdatetime DateTime
+  examenddatetime   DateTime
+  ptnumber          Int
+  department        String
+  doctor            String
+  ivrname           String?
+  memo              String?
+  inputter          String?
+  ptinfo            Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
 }

@@ -43,16 +43,16 @@ const Home = () => {
         <Link to="/ptinfos" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           患者情報一覧
         </Link>
-        <Link to="/import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+        <Link to="/ptinfo-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           患者情報インポート
         </Link>
-        <Link to="/import/report" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+        <Link to="/report-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           レポートインポート
         </Link>
-        <Link to="/import/doctor" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+        <Link to="/doctor-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           ドクターインポート
         </Link>
-        <Link to="/import/schedule" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+        <Link to="/schedule-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
           スケジュールインポート
         </Link>
         <Link to="/schedules" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">

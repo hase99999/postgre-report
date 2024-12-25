@@ -60,8 +60,8 @@ const ReportDetail = () => {
     const query = new URLSearchParams(location.search);
     const ptnumber = query.get('ptnumber');
     if (ptnumber) {
-      console.log(`Navigating back to /ptinfo/${ptnumber}`); // デバッグ用
-      navigate(`/ptinfo/${ptnumber}`);
+      console.log(`Navigating back to /ptinfos/${ptnumber}`); // デバッグ用
+      navigate(`/ptinfos/${ptnumber}`);
     } else {
       navigate(-1);
     }

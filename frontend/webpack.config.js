@@ -1,25 +1,24 @@
-// webpack.config.js
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js', // エントリーポイント
   output: {
-    path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    clean: true,
+    path: path.resolve(__dirname, 'dist'), // 出力ディレクトリ
+    publicPath: '/', // 公開パス
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/, // JavaScriptとJSXファイルを処理
+        test: /\.jsx?$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
         },
       },
       {
-        test: /\.css$/, // CSSファイルを処理
+        test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
       // 必要に応じて他のローダーも追加
@@ -32,6 +31,10 @@ module.exports = {
   ],
   resolve: {
     extensions: ['.js', '.jsx'], // 解決する拡張子
+    fallback: {
+      "stream": require.resolve("stream-browserify"),
+      "timers": require.resolve("timers-browserify"),
+    },
   },
   devServer: {
     port: 3000, // ポートをここに指定
