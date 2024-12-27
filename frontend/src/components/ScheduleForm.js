@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { startOfWeek, formatISO, isValid, parseISO } from 'date-fns';
 
 const ScheduleForm = () => {
   const [examstartdatetime, setExamstartdatetime] = useState('');
@@ -9,36 +10,47 @@ const ScheduleForm = () => {
   const [department, setDepartment] = useState('');
   const [doctor, setDoctor] = useState('');
   const [ivrname, setIvrname] = useState('');
+  const [id, setId] = useState(null); // Assuming editing capability
   const navigate = useNavigate();
-  const { id } = useParams();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    if (id) {
-      const fetchSchedule = async () => {
-        try {
-          const response = await axios.get(`/api/schedules/${id}`);
+    const scheduleId = searchParams.get('id');
+    if (scheduleId) {
+      // Fetch existing schedule data and populate fields
+      axios.get(`/api/schedules/${scheduleId}`)
+        .then(response => {
           const schedule = response.data;
-          setExamstartdatetime(schedule.examstartdatetime);
-          setExamenddatetime(schedule.examenddatetime);
+          setExamstartdatetime(schedule.examstartdatetime.substring(0,16)); // For input type="datetime-local"
+          setExamenddatetime(schedule.examenddatetime.substring(0,16));
           setPtnumber(schedule.ptnumber);
           setDepartment(schedule.department);
           setDoctor(schedule.doctor);
           setIvrname(schedule.ivrname);
-        } catch (error) {
+          setId(schedule.id);
+        })
+        .catch(error => {
           console.error('Error fetching schedule:', error);
-        }
-      };
-
-      fetchSchedule();
+        });
+    } else {
+      // 新規入力時のデフォルト値設定
+      const now = new Date();
+      const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // JSTに変換
+      const startDate = jstNow.toISOString().slice(0, 16);
+      const endDate = new Date(jstNow.getTime() + 45 * 60000).toISOString().slice(0, 16);
+      setExamstartdatetime(startDate);
+      setExamenddatetime(endDate);
     }
-  }, [id]);
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const startDate = new Date(examstartdatetime);
+      const endDate = new Date(examenddatetime);
       const scheduleData = {
-        examstartdatetime,
-        examenddatetime,
+        examstartdatetime: startDate.toISOString(),
+        examenddatetime: endDate.toISOString(),
         ptnumber,
         department,
         doctor,
@@ -53,107 +65,94 @@ const ScheduleForm = () => {
         console.log('Added new schedule:', scheduleData);
       }
 
-      navigate('/schedules');
+      const startOfWeekDate = startOfWeek(new Date(examstartdatetime), { weekStartsOn: 1 });
+      navigate(`/schedules?viewMode=week&currentDate=${startOfWeekDate.toISOString()}`);
     } catch (error) {
       console.error('Error saving schedule:', error);
     }
   };
 
   const handleStartDateChange = (e) => {
-    const startDate = e.target.value;
-    setExamstartdatetime(startDate);
+    const startDate = new Date(e.target.value);
+    const jstStartDate = new Date(startDate.getTime() + 9 * 60 * 60 * 1000); // JSTに変換
+    setExamstartdatetime(jstStartDate.toISOString().slice(0, 16));
     // 終了時間の日付を開始時間と同じに設定し、開始時間の45分後に設定
-    const endDate = new Date(startDate);
-    endDate.setMinutes(endDate.getMinutes() + 45);
+    const endDate = new Date(jstStartDate.getTime() + 45 * 60000);
     setExamenddatetime(endDate.toISOString().slice(0, 16));
   };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">{id ? 'スケジュール修正' : '新規スケジュール入力'}</h1>
+      <h2 className="text-2xl font-bold mb-4">{id ? 'スケジュール編集' : '新規スケジュール作成'}</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="examstartdatetime">
-            検査開始日時
-          </label>
+          <label className="block mb-2">開始日時</label>
           <input
             type="datetime-local"
-            id="examstartdatetime"
             value={examstartdatetime}
             onChange={handleStartDateChange}
-            step="300" // 5分毎
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            step="300" // 5分間隔
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="examenddatetime">
-            検査終了日時
-          </label>
+          <label className="block mb-2">終了日時</label>
           <input
             type="datetime-local"
-            id="examenddatetime"
             value={examenddatetime}
             onChange={(e) => setExamenddatetime(e.target.value)}
-            step="300" // 5分毎
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            step="300" // 5分間隔
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="ptnumber">
-            患者番号
-          </label>
+          <label className="block mb-2">患者番号</label>
           <input
             type="text"
-            id="ptnumber"
             value={ptnumber}
             onChange={(e) => setPtnumber(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="department">
-            部門
-          </label>
+          <label className="block mb-2">部門</label>
           <input
             type="text"
-            id="department"
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="doctor">
-            医師
-          </label>
+          <label className="block mb-2">医師</label>
           <input
             type="text"
-            id="doctor"
             value={doctor}
             onChange={(e) => setDoctor(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="ivrname">
-            IVR名
-          </label>
+          <label className="block mb-2">IVR名</label>
           <input
             type="text"
-            id="ivrname"
             value={ivrname}
             onChange={(e) => setIvrname(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="w-full px-3 py-2 border rounded"
           />
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            {id ? '修正' : '登録'}
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          {id ? '更新' : '保存'}
+        </button>
       </form>
     </div>
   );

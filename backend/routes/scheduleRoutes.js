@@ -129,5 +129,43 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+// スケジュールを削除するAPI
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedSchedule = await prisma.schedule.delete({
+      where: { id: parseInt(id) },
+    });
+    console.log('Deleted schedule from DB:', deletedSchedule); // デバッグ用
+    res.json({ message: 'Schedule deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting schedule:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// スケジュールを更新するAPI
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { examstartdatetime, examenddatetime, ptnumber, department, doctor, ivrname } = req.body;
+  try {
+    const updatedSchedule = await prisma.schedule.update({
+      where: { id: parseInt(id) },
+      data: {
+        examstartdatetime: new Date(examstartdatetime),
+        examenddatetime: new Date(examenddatetime),
+        ptnumber,
+        department,
+        doctor,
+        ivrname,
+      },
+    });
+    console.log('Updated schedule in DB:', updatedSchedule); // デバッグ用
+    res.json(updatedSchedule);
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 export default router;

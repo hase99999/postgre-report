@@ -23,7 +23,7 @@ const ScheduleList = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
- 
+
   useEffect(() => {
     // URL クエリパラメータの初期化
     const query = new URLSearchParams(location.search);
@@ -35,12 +35,8 @@ const ScheduleList = () => {
     setViewMode(viewModeParam);
     setCurrentDate(queryDate);
   }, []); // 初回のみ実行
+
   
-  
-  
-  
-  
- 
 
   // 表示期間の計算
   const startOfCurrentPeriod = viewMode === 'week'
@@ -68,9 +64,8 @@ const ScheduleList = () => {
       setViewMode(viewModeParam);
       setCurrentDate(queryDate);
     }
-  }, []); // 初回のみ実行
-  
-  
+  }, [location.state, location.search]); // location.state や location.search の変更を監視
+
   // API 呼び出し用 useEffect
   useEffect(() => {
     let isMounted = true;
@@ -106,6 +101,7 @@ const ScheduleList = () => {
       } catch (error) {
         if (error.name !== 'CanceledError') {
           console.error('Error fetching schedules:', error);
+          // 必要に応じてエラーメッセージを表示
         }
       }
     };
@@ -117,7 +113,7 @@ const ScheduleList = () => {
       controller.abort();
     };
   }, [startOfCurrentPeriod.getTime(), endOfCurrentPeriod.getTime()]); // 状態変更のみで発火
-  
+
   
   useEffect(() => {
     console.log('URL Params (before API call):', { viewMode, currentDate });
@@ -128,7 +124,7 @@ const ScheduleList = () => {
     const newDate = viewMode === 'week'
       ? subWeeks(currentDate, 1)
       : subMonths(currentDate, 1);
-  
+
     setCurrentDate(newDate);
   };
   
@@ -136,9 +132,10 @@ const ScheduleList = () => {
     const newDate = viewMode === 'week'
       ? addWeeks(currentDate, 1)
       : addMonths(currentDate, 1);
-  
+
     setCurrentDate(newDate);
   };
+  
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
   };
@@ -222,7 +219,8 @@ const ScheduleList = () => {
         <thead>
           <tr className="bg-gray-200">
             <th className="py-2 px-4 border-b">検査日</th>
-            <th className="py-2 px-4 border-b">検査時間</th>
+            <th className="py-2 px-4 border-b">検査開始時間</th>
+            <th className="py-2 px-4 border-b">検査終了時間</th>
             <th className="py-2 px-4 border-b">患者番号</th>
             <th className="py-2 px-4 border-b">患者名</th>
             <th className="py-2 px-4 border-b">部門</th>
@@ -241,7 +239,8 @@ const ScheduleList = () => {
                 onClick={() => handleRowClick(schedule.id)}
               >
                 <td className="py-2 px-4 border-b">{format(schedule.examstartdatetime, 'yyyy/MM/dd')}</td>
-                <td className="py-2 px-4 border-b">{format(schedule.examstartdatetime, 'HH:mm:ss')}</td>
+                <td className="py-2 px-4 border-b">{format(schedule.examstartdatetime, 'HH:mm')}</td>
+                <td className="py-2 px-4 border-b">{format(schedule.examenddatetime, 'HH:mm')}</td>
                 <td className="py-2 px-4 border-b">{schedule.ptnumber}</td>
                 <td className="py-2 px-4 border-b">{schedule.ptinfo?.ptname ?? '患者情報なし'}</td>
                 <td className="py-2 px-4 border-b">{schedule.department}</td>
@@ -259,7 +258,7 @@ const ScheduleList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="8" className="py-2 px-4 border-b text-center">
+              <td colSpan="9" className="py-2 px-4 border-b text-center">
                 この{viewMode === 'week' ? '週' : '月'}のスケジュールはありません
               </td>
             </tr>
