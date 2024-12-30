@@ -19,6 +19,7 @@ import ScheduleDetail from './components/ScheduleDetail';
 import ScheduleForm from './components/ScheduleForm';
 import Logout from './components/Logout';
 import FetchAndSaveData from './components/FetchAndSaveData';
+import TeachingImport from './components/TeachingImport';
 
 function App() {
   return (
@@ -153,7 +154,12 @@ function App() {
                 <Logout />
               </PrivateRoute>
             } 
-          />
+          /> <Route path="/import-teaching-file" element={
+            <PrivateRoute>
+              <TeachingImport />
+            </PrivateRoute>
+          } />
+          
           <Route path="/import" element={<Navigate to="/ptinfo-import" replace />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>

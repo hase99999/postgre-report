@@ -10,6 +10,11 @@ const PtinfoDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // URLのクエリパラメータからページ番号と検索クエリを取得
+  const query = new URLSearchParams(location.search);
+  const page = query.get('page') || 1;
+  const search = query.get('search') || '';
+
   useEffect(() => {
     const fetchPtinfo = async () => {
       try {
@@ -27,19 +32,16 @@ const PtinfoDetail = () => {
   }, [ptnumber]);
 
   const handleBack = () => {
-    const query = new URLSearchParams(location.search);
-    const page = query.get('page') || 1;
-    console.log(`Navigating back to /ptinfos?page=${page}`); // デバッグ用
-    navigate(`/ptinfos?page=${page}`);
+    navigate(-1); // ブラウザの履歴を一つ戻る
   };
 
   const handleReportClick = (reportId) => {
     console.log(`Navigating to report with ID: ${reportId}`); // ログを追加
-    navigate(`/report/${reportId}?ptnumber=${ptnumber}`);
+    navigate(`/report/${reportId}?ptnumber=${ptnumber}&page=${page}&search=${encodeURIComponent(search)}`);
   };
 
   if (error) {
-    return <div>{error}</div>;
+    return <div className="text-red-500">{error}</div>;
   }
 
   if (!ptinfo) {
@@ -62,10 +64,10 @@ const PtinfoDetail = () => {
           <span className="font-semibold">患者名:</span> {ptinfo.ptname}
         </div>
         <div className="mb-4">
-          <span className="font-semibold">生年月日:</span> {isValid(new Date(ptinfo.birth)) ? format(new Date(ptinfo.birth), 'yyyy/MM/dd') : '無効な日付'}
+          <span className="font-semibold">生年月日:</span> {ptinfo.birth && isValid(new Date(ptinfo.birth)) ? format(new Date(ptinfo.birth), 'yyyy/MM/dd') : '無効な日付'}
         </div>
         <div className="mb-4">
-          <span className="font-semibold">性別:</span> {ptinfo.gender}
+          <span className="font-semibold">性別:</span> {ptinfo.sex || ptinfo.gender}
         </div>
         <div className="mb-4">
           <span className="font-semibold">レポート:</span>
@@ -81,12 +83,18 @@ const PtinfoDetail = () => {
             </thead>
             <tbody>
               {(ptinfo.reports || []).map((report) => (
-                <tr key={report.id} className="hover:bg-gray-100 cursor-pointer" onClick={() => handleReportClick(report.id)}>
-                  <td className="py-2 px-4 border-b">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</td>
-                  <td className="py-2 px-4 border-b">{report.modality}</td>
-                  <td className="py-2 px-4 border-b">{report.doctor}</td>
-                  <td className="py-2 px-4 border-b">{report.department}</td>
-                  <td className="py-2 px-4 border-b">{report.imagediag}</td>
+                <tr
+                  key={report.id}
+                  className="hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleReportClick(report.id)}
+                >
+                  <td className="py-2 px-4 border-b">
+                    {report.examdate && isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}
+                  </td>
+                  <td className="py-2 px-4 border-b">{report.modality || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b">{report.doctor || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b">{report.department || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b">{report.imagediag || 'N/A'}</td>
                 </tr>
               ))}
             </tbody>

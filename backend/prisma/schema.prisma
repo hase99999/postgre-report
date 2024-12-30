@@ -8,37 +8,38 @@ generator client {
 }
 
 model Ptinfo {
-  id        Int        @id @default(autoincrement())
-  ptnumber  Int        @unique
-  ptname    String
-  ptage     Int
-  birth     DateTime?
-  sex       String
-  reports   Report[]   @relation("PtinfoReports")
-  schedules Schedule[] @relation("PtinfoSchedules")
+  id            Int            @id @default(autoincrement())
+  ptnumber      Int            @unique
+  ptname        String
+  ptage         Int
+  birth         DateTime?
+  sex           String
+  reports       Report[]       @relation("PtinfoReports")
+  schedules     Schedule[]     @relation("PtinfoSchedules")
+  teachingFiles teachingFile[] @relation("PtinfoTeachingFiles")
 }
 
 model Report {
-  id            Int      @id @default(autoincrement())
-  examdate      DateTime
-  ptnumber      Int
-  modality      String?
-  doctor        String?
-  department    String
-  clinicaldiag  String
-  imagediag     String
-  report        String
-  finaldiag     String
-  interesting   String
-  inputby       String
-  inputdate     DateTime
-  site          String
-  inputtime     DateTime
-  ptinfo        Ptinfo?   @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoReports")
+  id           Int      @id @default(autoincrement())
+  examdate     DateTime
+  ptnumber     Int
+  modality     String?
+  doctor       String?
+  department   String
+  clinicaldiag String
+  imagediag    String
+  report       String
+  finaldiag    String
+  interesting  String
+  inputby      String
+  inputdate    DateTime
+  site         String
+  inputtime    DateTime
+  ptinfo       Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoReports")
 }
 
 model Doctor {
-  docid          Int      @id @default(autoincrement())
+  docid          Int    @id @default(autoincrement())
   docname        String
   department     String
   password       String
@@ -58,4 +59,24 @@ model Schedule {
   memo              String?
   inputter          String?
   ptinfo            Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
+}
+
+model teachingFile {
+  id              Int      @id @default(autoincrement())
+  seaquentail     String   @unique
+  site            String
+  field           String
+  ptnumber        Int
+  dicomid         Int
+  agesex          String
+  pthistory       String
+  answer          String
+  explanation     String
+  registration    DateTime @default(now())
+  registname      String
+  difficultylevel Int
+  pathology       String
+  publication     Boolean
+
+  ptinfo Ptinfo @relation("PtinfoTeachingFiles", fields: [ptnumber], references: [ptnumber])
 }

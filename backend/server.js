@@ -13,6 +13,7 @@ import scheduleRoutes from './routes/scheduleRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import authMiddleware from './middleware/authMiddleware.js';
+import teachingFileRoutes from './routes/teachingFileRoutes.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/teaching-files', teachingFileRoutes);
 
 app.use('/api/protected', authMiddleware, (req, res) => {
   res.json({ message: 'This is a protected route' });
