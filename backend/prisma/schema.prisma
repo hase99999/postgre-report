@@ -45,7 +45,7 @@ model Doctor {
   password       String
   hospital       String
   level          Int
-  employeeNumber String
+  employeeNumber String  @unique
 }
 
 model Schedule {
@@ -63,7 +63,7 @@ model Schedule {
 
 model teachingFile {
   id              Int      @id @default(autoincrement())
-  seaquentail     String   @unique
+  seaquentail     Int   @unique
   site            String
   field           String
   ptnumber        Int

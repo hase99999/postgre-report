@@ -16,20 +16,31 @@ const TeachingImport = () => {
       setMessage('ファイルを選択してください。');
       return;
     }
-
+  
     if (file.type !== 'application/json') {
       setMessage('JSONファイルを選択してください。');
       return;
     }
-
+  
     try {
       setIsUploading(true);
       const reader = new FileReader();
-
+  
       reader.onload = async (event) => {
         try {
           const json = JSON.parse(event.target.result);
-          const response = await axios.post('/api/teaching-files/import', { records: json.records });
+          console.log('送信データ:', JSON.stringify(json, null, 2)); // データ確認用
+  
+          const records = Array.isArray(json.records) ? json.records : [json];
+  
+          // 各レコードに ptnumber が存在するか確認
+          records.forEach((record, index) => {
+            if (!record.ptnumber) {
+              console.warn(`Record ${index + 1} is missing ptnumber.`);
+            }
+          });
+  
+          const response = await axios.post('/api/teaching-files/import', { records });
           setMessage(response.data.message || 'インポートに成功しました。');
         } catch (error) {
           console.error('インポートエラー:', error);
@@ -38,7 +49,7 @@ const TeachingImport = () => {
           setIsUploading(false);
         }
       };
-
+  
       reader.readAsText(file);
     } catch (error) {
       console.error('ファイル読み込みエラー:', error);

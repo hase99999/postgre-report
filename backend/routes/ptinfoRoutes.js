@@ -8,31 +8,65 @@ const prisma = new PrismaClient();
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-// JSONファイルから患者情報をインポートしてbirthフィールドを更新するAPI
+// JSONファイルから患者情報をインポートしてアップサートするAPI
 router.post('/import/json', upload.single('file'), async (req, res) => {
   try {
     const jsonData = fs.readFileSync(req.file.path, 'utf8');
     const ptinfos = JSON.parse(jsonData);
 
-    for (const ptinfo of ptinfos) {
-      if (ptinfo.birth) {
-        const birthDate = new Date(ptinfo.birth);
-        if (!isNaN(birthDate)) {
-          await prisma.ptinfo.update({
-            where: { ptnumber: ptinfo.ptnumber },
-            data: { birth: birthDate },
-          });
-        } else {
-          console.error(`Invalid date for ptnumber ${ptinfo.ptnumber}: ${ptinfo.birth}`);
+    if (!ptinfos.records || !Array.isArray(ptinfos.records)) {
+      return res.status(400).json({ error: '"records" フィールドが存在し、配列である必要があります。' });
+    }
+
+    const records = ptinfos.records;
+    console.log(`インポート対象のレコード数: ${records.length}`);
+
+    // バッチ処理のための設定
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+      const batch = records.slice(i, i + BATCH_SIZE);
+      const upsertPromises = batch.map(ptinfo => {
+        if (!ptinfo.ptnumber) {
+          console.warn('ptnumberが存在しないレコードをスキップします。', ptinfo);
+          return null;
         }
-      }
+
+        // ptnumber を整数として扱う
+        const ptnumberInt = parseInt(ptinfo.ptnumber, 10);
+        if (isNaN(ptnumberInt)) {
+          console.warn('ptnumberが整数ではないレコードをスキップします。', ptinfo);
+          return null;
+        }
+
+        return prisma.ptinfo.upsert({
+          where: { ptnumber: ptnumberInt },
+          update: {
+            ptname: ptinfo.ptname,
+            ptage: ptinfo.ptage,
+            birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
+            sex: ptinfo.sex,
+            // 他のフィールドがあれば追加
+          },
+          create: {
+            ptnumber: ptnumberInt,
+            ptname: ptinfo.ptname,
+            ptage: ptinfo.ptage,
+            birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
+            sex: ptinfo.sex,
+            // 他のフィールドがあれば追加
+          },
+        });
+      }).filter(promise => promise !== null);
+
+      await prisma.$transaction(upsertPromises);
+      console.log(`バッチ ${i / BATCH_SIZE + 1} のアップサートが完了しました。`);
     }
 
     fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-    res.status(200).json({ message: 'Ptinfo birth dates updated successfully' });
+    res.status(200).json({ message: 'Ptinfoデータが正常にインポートおよびアップサートされました。' });
   } catch (err) {
-    console.error('Error importing ptinfo data:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Ptinfoデータのインポート中にエラーが発生しました:', err);
+    res.status(500).json({ error: '内部サーバーエラーが発生しました。' });
   }
 });
 
@@ -44,41 +78,52 @@ router.post('/import/xml', upload.single('file'), async (req, res) => {
 
     parser.parseString(xmlData, async (err, result) => {
       if (err) {
-        console.error('Error parsing XML data:', err);
-        return res.status(500).json({ error: 'Error parsing XML data' });
+        console.error('XMLデータの解析中にエラーが発生しました:', err);
+        return res.status(500).json({ error: 'XMLデータの解析中にエラーが発生しました。' });
       }
 
       const ptinfos = result.ptinfos.ptinfo; // XMLの構造に応じて調整
       if (!ptinfos) {
-        console.error('No ptinfos found in XML data');
-        return res.status(400).json({ error: 'No ptinfos found in XML data' });
+        console.error('XMLデータにptinfosが見つかりません。');
+        return res.status(400).json({ error: 'XMLデータにptinfosが見つかりません。' });
       }
 
-      try {
-        for (const ptinfo of ptinfos) {
-          if (ptinfo.birth) {
-            const birthDate = new Date(ptinfo.birth);
-            if (!isNaN(birthDate)) {
-              await prisma.ptinfo.update({
-                where: { ptnumber: ptinfo.ptnumber },
-                data: { birth: birthDate },
-              });
-            } else {
-              console.error(`Invalid date for ptnumber ${ptinfo.ptnumber}: ${ptinfo.birth}`);
-            }
+      const records = Array.isArray(ptinfos) ? ptinfos : [ptinfos];
+      console.log(`インポート対象のレコード数: ${records.length}`);
+
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const upsertPromises = batch.map(ptinfo => {
+          if (!ptinfo.ptnumber) {
+            console.warn('ptnumberが存在しないレコードをスキップします。', ptinfo);
+            return null;
           }
-        }
 
-        fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-        res.status(200).json({ message: 'Ptinfo birth dates updated successfully' });
-      } catch (err) {
-        console.error('Error importing ptinfo data:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+          return prisma.ptinfo.upsert({
+            where: { ptnumber: ptinfo.ptnumber.toString() },
+            update: {
+              birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
+              // 他のフィールドも必要に応じて更新
+            },
+            create: {
+              ptnumber: ptinfo.ptnumber.toString(),
+              birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
+              // 他のフィールドも必要に応じて作成
+            },
+          });
+        }).filter(promise => promise !== null);
+
+        await prisma.$transaction(upsertPromises);
+        console.log(`バッチ ${i / BATCH_SIZE + 1} のアップサートが完了しました。`);
       }
+
+      fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
+      res.status(200).json({ message: 'Ptinfo birth datesが正常にアップデートされました。' });
     });
   } catch (err) {
-    console.error('Error importing ptinfo data:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Ptinfoデータのインポート中にエラーが発生しました:', err);
+    res.status(500).json({ error: '内部サーバーエラーが発生しました。' });
   }
 });
 
@@ -89,25 +134,25 @@ router.get('/', async (req, res) => {
   try {
     const ptinfos = await prisma.ptinfo.findMany({
       where: {
-        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
+        ptnumber: searchTerm ? ptinfo.ptnumber.toString() === searchTerm : undefined,
       },
       skip: parseInt(skip, 10),
       take: parseInt(limit, 10),
     });
     const total = await prisma.ptinfo.count({
       where: {
-        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
+        ptnumber: searchTerm ? ptinfo.ptnumber.toString() === searchTerm : undefined,
       },
     });
 
     // 取得したデータをログに表示
-    console.log('Fetched ptinfos from DB:', ptinfos);
-    console.log('Total ptinfos count:', total);
+    console.log('DBから取得したptinfos:', ptinfos);
+    console.log('総ptinfos数:', total);
 
     res.json({ ptinfos, total });
   } catch (error) {
-    console.error('Error fetching patient info:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('患者情報の取得中にエラーが発生しました:', error);
+    res.status(500).json({ error: '内部サーバーエラーが発生しました。' });
   }
 });
 
@@ -117,7 +162,7 @@ router.get('/:ptnumber', async (req, res) => {
   console.log('ptnumber:', ptnumber); // デバッグ用
   try {
     const ptinfo = await prisma.ptinfo.findUnique({
-      where: { ptnumber: parseInt(ptnumber) },
+      where: { ptnumber: ptnumber.toString() },
       include: {
         reports: {
           select: {
@@ -133,24 +178,25 @@ router.get('/:ptnumber', async (req, res) => {
     });
 
     if (!ptinfo) {
-      return res.status(404).json({ error: 'Ptinfo not found' });
+      return res.status(404).json({ error: 'Ptinfoが見つかりません。' });
     }
 
     res.json(ptinfo);
   } catch (error) {
-    console.error('Error fetching ptinfo:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Ptinfoの取得中にエラーが発生しました:', error);
+    res.status(500).json({ error: '内部サーバーエラーが発生しました。' });
   }
 });
+
 // 患者情報を全削除するAPI
 router.delete('/all', async (req, res) => {
   try {
     await prisma.ptinfo.deleteMany({});
     await prisma.$executeRaw`ALTER SEQUENCE "Ptinfo_id_seq" RESTART WITH 1;`; // IDをリセット
-    res.json({ message: 'All ptinfos deleted and ID reset' });
+    res.json({ message: '全てのptinfosが削除され、IDがリセットされました。' });
   } catch (err) {
-    console.error('Error deleting ptinfos:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('全てのptinfosの削除中にエラーが発生しました:', err);
+    res.status(500).json({ error: '内部サーバーエラーが発生しました。' });
   }
 });
 

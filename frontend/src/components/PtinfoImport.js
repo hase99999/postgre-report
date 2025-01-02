@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Papa from 'papaparse';
 import xml2js from 'xml2js';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // 認証コンテキストのインポート
 
 const PtinfoImport = () => {
-  const [csvFile, setCsvFile] = useState(null);
   const [jsonFile, setJsonFile] = useState(null);
-  const [xmlFile, setXmlFile] = useState(null);
+  const [csvFile, setCsvFile] = useState(null); // CSVファイルのステート
+  const [xmlFile, setXmlFile] = useState(null); // XMLファイルのステート
+  const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState('');
+  
+  const { auth } = useAuth(); // 認証コンテキストからトークンを取得
   const navigate = useNavigate();
 
+  // デバッグ: auth オブジェクトの確認
+  console.log('Auth Object:', currentUser);
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log('ユーザーが認証されています:', currentUser);
+    } else {
+      console.log('ユーザーが認証されていません。');
+    }
+  }, [currentUser]);
+  
   const handleFileChange = (e, setFile) => {
     setFile(e.target.files[0]);
   };
@@ -18,51 +32,95 @@ const PtinfoImport = () => {
   const handleJsonSubmit = async (e) => {
     e.preventDefault();
     if (!jsonFile) {
-      alert('Please select a JSON file.');
+      alert('JSONファイルを選択してください。');
       return;
     }
+
+    if (!currentUser || !currentUser.token) {
+      alert('認証されていません。ログインしてください。');
+      navigate('/login');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', jsonFile);
+
     try {
-      await axios.post('/api/ptinfos/import/json', formData, {
+      setIsUploading(true);
+      const response = await axios.post('http://localhost:3001/api/ptinfos/import/json', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${currentUser.token}`, // トークンをヘッダーに追加
         },
       });
-      alert('JSON data imported successfully');
+      setMessage(response.data.message || 'JSONデータが正常にインポートされました。');
+      alert(response.data.message || 'JSONデータが正常にインポートされました。');
     } catch (error) {
-      console.error('Error importing JSON data:', error);
-      alert('Error importing JSON data');
+      console.error('JSONデータのインポート中にエラーが発生しました:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setMessage(`エラー: ${error.response.data.error}`);
+        alert(`エラー: ${error.response.data.error}`);
+      } else {
+        setMessage('JSONデータのインポート中に不明なエラーが発生しました。');
+        alert('JSONデータのインポート中に不明なエラーが発生しました。');
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleCsvSubmit = async (e) => {
     e.preventDefault();
     if (!csvFile) {
-      alert('Please select a CSV file.');
+      alert('CSVファイルを選択してください。');
       return;
     }
+
+    if (!auth || !auth.token) {
+      alert('認証されていません。ログインしてください。');
+      navigate('/login');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', csvFile);
     try {
-      await axios.post('/api/ptinfos/import/csv', formData, {
+      setIsUploading(true);
+      await axios.post('http://localhost:3001/api/ptinfos/import/csv', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${auth.token}`, // トークンをヘッダーに追加
         },
       });
-      alert('CSV data imported successfully');
+      setMessage('CSVデータが正常にインポートされました。');
+      alert('CSVデータが正常にインポートされました。');
     } catch (error) {
-      console.error('Error importing CSV data:', error);
-      alert('Error importing CSV data');
+      console.error('CSVデータのインポート中にエラーが発生しました:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setMessage(`エラー: ${error.response.data.error}`);
+        alert(`エラー: ${error.response.data.error}`);
+      } else {
+        setMessage('CSVデータのインポート中に不明なエラーが発生しました。');
+        alert('CSVデータのインポート中に不明なエラーが発生しました。');
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleXmlSubmit = async (e) => {
     e.preventDefault();
     if (!xmlFile) {
-      alert('Please select an XML file.');
+      alert('XMLファイルを選択してください。');
       return;
     }
+
+    if (!auth || !auth.token) {
+      alert('認証されていません。ログインしてください。');
+      navigate('/login');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -77,8 +135,8 @@ const PtinfoImport = () => {
         }));
         await importData(data);
       } catch (error) {
-        console.error('Error importing XML data:', error);
-        alert('Error importing XML data');
+        console.error('XMLデータのインポート中にエラーが発生しました:', error);
+        alert('XMLデータのインポート中にエラーが発生しました。');
       }
     };
     reader.readAsText(xmlFile);
@@ -87,14 +145,29 @@ const PtinfoImport = () => {
   const importData = async (data) => {
     try {
       const chunkSize = 100; // 分割するサイズ
+      setIsUploading(true);
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
-        await axios.post('/api/ptinfos/import', chunk);
+        await axios.post('http://localhost:3001/api/ptinfos/import', chunk, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`, // トークンをヘッダーに追加
+          },
+        });
       }
-      alert('Data imported successfully');
+      setMessage('データが正常にインポートされました。');
+      alert('データが正常にインポートされました。');
     } catch (error) {
-      console.error('Error importing data:', error);
-      alert('Error importing data');
+      console.error('データのインポート中にエラーが発生しました:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setMessage(`エラー: ${error.response.data.error}`);
+        alert(`エラー: ${error.response.data.error}`);
+      } else {
+        setMessage('データのインポート中に不明なエラーが発生しました。');
+        alert('データのインポート中に不明なエラーが発生しました。');
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -105,35 +178,72 @@ const PtinfoImport = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">患者情報インポート</h1>
+      
+      {/* JSONインポートフォーム */}
       <form onSubmit={handleJsonSubmit}>
         <div className="mb-4">
           <label className="block mb-2">JSONファイルを選択してください:</label>
-          <input type="file" accept=".json" onChange={(e) => handleFileChange(e, setJsonFile)} />
+          <input 
+            type="file" 
+            accept=".json" 
+            onChange={(e) => handleFileChange(e, setJsonFile)} 
+          />
         </div>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        <button 
+          type="submit" 
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" 
+          disabled={isUploading}
+        >
           JSONインポート
         </button>
       </form>
+      
+      {/* CSVインポートフォーム */}
       <form onSubmit={handleCsvSubmit} className="mt-4">
         <div className="mb-4">
           <label className="block mb-2">CSVファイルを選択してください:</label>
-          <input type="file" accept=".csv" onChange={(e) => handleFileChange(e, setCsvFile)} />
+          <input 
+            type="file" 
+            accept=".csv" 
+            onChange={(e) => handleFileChange(e, setCsvFile)} 
+          />
         </div>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        <button 
+          type="submit" 
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" 
+          disabled={isUploading}
+        >
           CSVインポート
         </button>
       </form>
+      
+      {/* XMLインポートフォーム */}
       <form onSubmit={handleXmlSubmit} className="mt-4">
         <div className="mb-4">
           <label className="block mb-2">XMLファイルを選択してください:</label>
-          <input type="file" accept=".xml" onChange={(e) => handleFileChange(e, setXmlFile)} />
+          <input 
+            type="file" 
+            accept=".xml" 
+            onChange={(e) => handleFileChange(e, setXmlFile)} 
+          />
         </div>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        <button 
+          type="submit" 
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" 
+          disabled={isUploading}
+        >
           XMLインポート
         </button>
       </form>
-      {message && <p className="mt-4">{message}</p>}
-      <button onClick={handleBack} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mt-4">
+      
+      {/* メッセージ表示 */}
+      {message && <p className="mt-4 text-center">{message}</p>}
+      
+      {/* 戻るボタン */}
+      <button 
+        onClick={handleBack} 
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mt-4"
+      >
         戻る
       </button>
     </div>
