@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import Papa from 'papaparse';
 import xml2js from 'xml2js';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +81,7 @@ const ScheduleImport = () => {
       const chunkSize = 100; // 分割するサイズ
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
-        await axios.post('/api/schedules/import', chunk);
+        await axiosInstance.post('/api/schedules/import', chunk);
       }
       setMessage('インポートが完了しました。');
     } catch (error) {

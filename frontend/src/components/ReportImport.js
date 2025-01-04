@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import Papa from 'papaparse';
 import xml2js from 'xml2js';
 import { useNavigate } from 'react-router-dom';
@@ -24,7 +24,7 @@ const ReportImport = () => {
     const formData = new FormData();
     formData.append('file', jsonFile);
     try {
-      await axios.post('/api/reports/import/json', formData, {
+      await axiosInstance.post('/api/reports/import/json', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -45,7 +45,7 @@ const ReportImport = () => {
     const formData = new FormData();
     formData.append('file', csvFile);
     try {
-      await axios.post('/api/reports/import/csv', formData, {
+      await axiosInstance.post('/api/reports/import/csv', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -98,7 +98,7 @@ const ReportImport = () => {
       const chunkSize = 100; // 分割するサイズ
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
-        await axios.post('/api/reports/import', chunk);
+        await axiosInstance.post('/api/reports/import', chunk);
       }
       alert('Data imported successfully');
     } catch (error) {
@@ -109,7 +109,7 @@ const ReportImport = () => {
 
   const handleJsonExport = async () => {
     try {
-      const response = await axios.get('/api/reports/export/json');
+      const response = await axiosInstance.get('/api/reports/export/json');
       const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -125,7 +125,7 @@ const ReportImport = () => {
 
   const handleXmlExport = async () => {
     try {
-      const response = await axios.get('/api/reports/export/xml');
+      const response = await axiosInstance.get('/api/reports/export/xml');
       const builder = new xml2js.Builder();
       const xml = builder.buildObject(response.data);
       const blob = new Blob([xml], { type: 'application/xml' });

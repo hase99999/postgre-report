@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, isValid, differenceInYears } from 'date-fns';
@@ -43,7 +44,7 @@ const PtinfoList = () => {
       try {
         console.log('Fetching ptinfos with page:', page, 'searchQuery:', searchQuery); // デバッグ用
         const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
-        const response = await axios.get('/api/ptinfos', {
+        const response = await axiosInstance.get('/ptinfos', {
           params: { page, limit, searchTerm: searchQuery, _t: timestamp },
           signal: controller.signal,
         });

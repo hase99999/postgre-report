@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
@@ -31,10 +32,20 @@ const ReportList = () => {
       try {
         console.log('Fetching reports with page:', page); // デバッグ用
         const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
-        const response = await axios.get('/api/reports', {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('認証トークンが見つかりません。');
+          return;
+        }
+
+        const response = await axiosInstance.get('http://localhost:3001/api/reports', {
           params: { page, limit, _t: timestamp },
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           signal: controller.signal,
         });
+
         if (isMounted) {
           console.log('Fetched reports:', response.data); // デバッグ用
           setReports(response.data.reports);
@@ -43,6 +54,10 @@ const ReportList = () => {
       } catch (error) {
         if (error.name !== 'CanceledError') {
           console.error('Error fetching reports:', error);
+          if (error.response) {
+            // サーバーからのレスポンスがある場合
+            console.error('サーバーからのエラーレスポンス:', error.response.data);
+          }
         }
       }
     };
@@ -96,8 +111,16 @@ const ReportList = () => {
         <tbody>
           {reports.length > 0 ? (
             reports.map((report) => (
-              <tr key={report.id} className="hover:bg-gray-100 cursor-pointer" onDoubleClick={() => handleRowClick(report.id)}>
-                <td className="py-2 px-4 border-b">{isValid(new Date(report.examdate)) ? format(new Date(report.examdate), 'yyyy/MM/dd') : '無効な日付'}</td>
+              <tr
+                key={report.id}
+                className="hover:bg-gray-100 cursor-pointer"
+                onDoubleClick={() => handleRowClick(report.id)}
+              >
+                <td className="py-2 px-4 border-b">
+                  {isValid(new Date(report.examdate))
+                    ? format(new Date(report.examdate), 'yyyy/MM/dd')
+                    : '無効な日付'}
+                </td>
                 <td className="py-2 px-4 border-b">{report.ptnumber}</td>
                 <td className="py-2 px-4 border-b">{report.ptinfo.ptname}</td>
                 <td className="py-2 px-4 border-b">{report.modality}</td>
@@ -107,7 +130,9 @@ const ReportList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="py-2 px-4 border-b text-center">該当するレポートがありません</td>
+              <td colSpan="6" className="py-2 px-4 border-b text-center">
+                該当するレポートがありません
+              </td>
             </tr>
           )}
         </tbody>
@@ -130,7 +155,10 @@ const ReportList = () => {
         </button>
       </div>
       <div className="flex justify-center mt-4">
-        <button onClick={handleHome} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+        <button
+          onClick={handleHome}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
           ホームに戻る
         </button>
       </div>

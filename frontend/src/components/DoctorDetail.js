@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
@@ -17,7 +18,7 @@ const DoctorDetail = () => {
       setIsLoading(true);
       try {
         console.log(`Fetching doctor with id: ${docid}`); // デバッグ用
-        const response = await axios.get(`/api/doctors/${docid}`, {
+        const response = await axiosInstance.get(`/doctors/${docid}`, {
           signal: controller.signal,
         });
         console.log('Response data:', response.data); // デバッグ用

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const ReportContext = createContext();
 
@@ -9,22 +9,22 @@ export const ReportProvider = ({ children }) => {
   const [reports, setReports] = useState([]);
 
   const fetchReports = async () => {
-    const response = await axios.get('/reports');
+    const response = await axiosInstance.get('/reports');
     setReports(response.data);
   };
 
   const addReport = async (name) => {
-    const response = await axios.post('/reports', { name });
+    const response = await axiosInstance.post('/reports', { name });
     setReports([...reports, response.data]);
   };
 
   const updateReport = async (id, name) => {
-    const response = await axios.put(`/reports/${id}`, { name });
+    const response = await axiosInstance.put(`/reports/${id}`, { name });
     setReports(reports.map(report => (report.id === id ? response.data : report)));
   };
 
   const deleteReport = async (id) => {
-    await axios.delete(`/reports/${id}`);
+    await axiosInstance.delete(`/reports/${id}`);
     setReports(reports.filter(report => report.id !== id));
   };
 

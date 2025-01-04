@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { format, isValid } from 'date-fns';
+import { useParams, useNavigate, useLocation} from 'react-router-dom';
+import { isValid, format } from 'date-fns'; // format を追加
 
 const PtinfoDetail = () => {
   const { ptnumber } = useParams();
@@ -9,7 +10,7 @@ const PtinfoDetail = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-
+ const [isLoading, setIsLoading] = useState(true);
   // URLのクエリパラメータからページ番号と検索クエリを取得
   const query = new URLSearchParams(location.search);
   const page = query.get('page') || 1;
@@ -19,12 +20,15 @@ const PtinfoDetail = () => {
     const fetchPtinfo = async () => {
       try {
         console.log(`Fetching ptinfo with ptnumber: ${ptnumber}`); // デバッグ用
-        const response = await axios.get(`/api/ptinfos/${ptnumber}`);
+        const response = await axiosInstance.get(`/ptinfos/${ptnumber}`);
         console.log('Response data:', response.data); // デバッグ用
         setPtinfo(response.data);
+        setError(null);
       } catch (error) {
         console.error('Error fetching ptinfo:', error);
         setError('データを取得できませんでした。');
+      }finally {
+        setIsLoading(false);
       }
     };
 

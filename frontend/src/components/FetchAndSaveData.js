@@ -1,6 +1,6 @@
 // src/components/FetchAndSaveData.js
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const FetchAndSaveData = () => {
   const [data, setData] = useState([]);
@@ -11,7 +11,7 @@ const FetchAndSaveData = () => {
     const fetchData = async () => {
       try {
         console.log('これからFetched dataします');
-        const response = await axios.get('/api/fetch-4d-data');
+        const response = await axiosInstance.get('/api/fetch-4d-data');
         console.log('Fetched data:', response.data);
         setData(response.data);
       } catch (error) {
@@ -35,7 +35,7 @@ const FetchAndSaveData = () => {
 
   const handleSave = async () => {
     try {
-      await axios.post('/api/save-data', { selectedData });
+      await axiosInstance.post('/api/save-data', { selectedData });
       // 保存成功時の処理
     } catch (error) {
       console.error('Error saving data:', error);

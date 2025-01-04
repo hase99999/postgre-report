@@ -3,16 +3,45 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import multer from 'multer';
 import xml2js from 'xml2js';
+import authMiddleware from '../middleware/authMiddleware.js'; // 認証ミドルウェアのインポート
 
 const prisma = new PrismaClient();
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+
+// Multer のストレージ設定
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // アップロード先のディレクトリを指定
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`); // ファイル名を設定
+  },
+});
+
+const upload = multer({ storage });
 
 // JSONファイルから患者情報をインポートしてアップサートするAPI
-router.post('/import/json', upload.single('file'), async (req, res) => {
+router.post('/import/json', authMiddleware, upload.single('file'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信したファイル:', req.file); // デバッグログ
+
+    console.log('開始: JSONファイルの読み込み');
     const jsonData = fs.readFileSync(req.file.path, 'utf8');
-    const ptinfos = JSON.parse(jsonData);
+    console.log('JSONファイルの読み込み完了');
+
+    console.log('開始: JSONデータの解析');
+    let ptinfos;
+    try {
+      ptinfos = JSON.parse(jsonData);
+    } catch (parseErr) {
+      console.error('JSONの解析に失敗しました:', parseErr);
+      return res.status(400).json({ error: 'JSONの解析に失敗しました。ファイルの形式を確認してください。' });
+    }
+    console.log('JSONデータの解析完了');
 
     if (!ptinfos.records || !Array.isArray(ptinfos.records)) {
       return res.status(400).json({ error: '"records" フィールドが存在し、配列である必要があります。' });
@@ -59,10 +88,11 @@ router.post('/import/json', upload.single('file'), async (req, res) => {
       }).filter(promise => promise !== null);
 
       await prisma.$transaction(upsertPromises);
-      console.log(`バッチ ${i / BATCH_SIZE + 1} のアップサートが完了しました。`);
+      console.log(`バッチ ${Math.floor(i / BATCH_SIZE) + 1} のアップサートが完了しました。`);
     }
 
     fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
+    console.log('Ptinfoデータが正常にインポートおよびアップサートされました。');
     res.status(200).json({ message: 'Ptinfoデータが正常にインポートおよびアップサートされました。' });
   } catch (err) {
     console.error('Ptinfoデータのインポート中にエラーが発生しました:', err);
@@ -71,11 +101,18 @@ router.post('/import/json', upload.single('file'), async (req, res) => {
 });
 
 // XMLファイルから患者情報をインポートしてbirthフィールドを更新するAPI
-router.post('/import/xml', upload.single('file'), async (req, res) => {
+router.post('/import/xml', authMiddleware, upload.single('file'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信したファイル:', req.file); // デバッグログ
+
     const xmlData = fs.readFileSync(req.file.path, 'utf8');
     const parser = new xml2js.Parser({ explicitArray: false });
 
+    console.log('開始: XMLデータの解析');
     parser.parseString(xmlData, async (err, result) => {
       if (err) {
         console.error('XMLデータの解析中にエラーが発生しました:', err);
@@ -91,6 +128,7 @@ router.post('/import/xml', upload.single('file'), async (req, res) => {
       const records = Array.isArray(ptinfos) ? ptinfos : [ptinfos];
       console.log(`インポート対象のレコード数: ${records.length}`);
 
+      // バッチ処理のための設定
       const BATCH_SIZE = 100;
       for (let i = 0; i < records.length; i += BATCH_SIZE) {
         const batch = records.slice(i, i + BATCH_SIZE);
@@ -100,14 +138,20 @@ router.post('/import/xml', upload.single('file'), async (req, res) => {
             return null;
           }
 
+          const ptnumberInt = parseInt(ptinfo.ptnumber, 10);
+          if (isNaN(ptnumberInt)) {
+            console.warn('ptnumberが整数ではないレコードをスキップします。', ptinfo);
+            return null;
+          }
+
           return prisma.ptinfo.upsert({
-            where: { ptnumber: ptinfo.ptnumber.toString() },
+            where: { ptnumber: ptnumberInt },
             update: {
               birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
               // 他のフィールドも必要に応じて更新
             },
             create: {
-              ptnumber: ptinfo.ptnumber.toString(),
+              ptnumber: ptnumberInt,
               birth: ptinfo.birth ? new Date(ptinfo.birth) : undefined,
               // 他のフィールドも必要に応じて作成
             },
@@ -115,10 +159,11 @@ router.post('/import/xml', upload.single('file'), async (req, res) => {
         }).filter(promise => promise !== null);
 
         await prisma.$transaction(upsertPromises);
-        console.log(`バッチ ${i / BATCH_SIZE + 1} のアップサートが完了しました。`);
+        console.log(`バッチ ${Math.floor(i / BATCH_SIZE) + 1} のアップサートが完了しました。`);
       }
 
       fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
+      console.log('Ptinfo birth datesが正常にアップデートされました。');
       res.status(200).json({ message: 'Ptinfo birth datesが正常にアップデートされました。' });
     });
   } catch (err) {
@@ -128,20 +173,20 @@ router.post('/import/xml', upload.single('file'), async (req, res) => {
 });
 
 // 患者情報一覧を取得するAPI
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   const { page = 1, limit = 10, searchTerm = '' } = req.query;
   const skip = (page - 1) * limit;
   try {
     const ptinfos = await prisma.ptinfo.findMany({
       where: {
-        ptnumber: searchTerm ? ptinfo.ptnumber.toString() === searchTerm : undefined,
+        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
       },
       skip: parseInt(skip, 10),
       take: parseInt(limit, 10),
     });
     const total = await prisma.ptinfo.count({
       where: {
-        ptnumber: searchTerm ? ptinfo.ptnumber.toString() === searchTerm : undefined,
+        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
       },
     });
 
@@ -157,12 +202,12 @@ router.get('/', async (req, res) => {
 });
 
 // 患者情報の詳細を取得するAPI
-router.get('/:ptnumber', async (req, res) => {
+router.get('/:ptnumber', authMiddleware, async (req, res) => {
   const { ptnumber } = req.params;
   console.log('ptnumber:', ptnumber); // デバッグ用
   try {
     const ptinfo = await prisma.ptinfo.findUnique({
-      where: { ptnumber: ptnumber.toString() },
+      where: { ptnumber: parseInt(ptnumber, 10) },
       include: {
         reports: {
           select: {
@@ -189,7 +234,7 @@ router.get('/:ptnumber', async (req, res) => {
 });
 
 // 患者情報を全削除するAPI
-router.delete('/all', async (req, res) => {
+router.delete('/all', authMiddleware, async (req, res) => {
   try {
     await prisma.ptinfo.deleteMany({});
     await prisma.$executeRaw`ALTER SEQUENCE "Ptinfo_id_seq" RESTART WITH 1;`; // IDをリセット

@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+// コンテキストの作成
 const AuthContext = createContext();
 
+// カスタムフックでコンテキストを簡単に利用
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
+// プロバイダーコンポーネント
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -14,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const doctorString = localStorage.getItem('doctor');
     let doctor = null;
 
-    if (doctorString && doctorString !== 'undefined') { // 'undefined' のチェックを追加
+    if (doctorString && doctorString !== 'undefined') { // 'undefined' のチェック
       try {
         doctor = JSON.parse(doctorString);
       } catch (error) {
@@ -32,18 +35,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // ログイン関数
   const login = (doctorData) => {
     if (doctorData && doctorData.token && doctorData.doctor) {
       setCurrentUser(doctorData);
       localStorage.setItem('token', doctorData.token);
-      localStorage.setItem('doctor', JSON.stringify(doctorData.doctor)); // Doctor情報を保存
-      console.log('AuthProvider: User logged in', doctorData); // デバッグログ
+      localStorage.setItem('doctor', JSON.stringify(doctorData.doctor));
+      console.log('AuthProvider: User logged in', doctorData);
     } else {
       console.error('ログインデータが不完全です:', doctorData);
       alert('ログインデータに問題があります。');
     }
   };
 
+  // ログアウト関数
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('token');

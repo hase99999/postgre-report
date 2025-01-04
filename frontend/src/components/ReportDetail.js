@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 
 const ReportDetail = () => {
-  // useParamsのキーをルート定義に合わせて確認してください
-  const { id } = useParams(); // ルートが "/report/:id" の場合
-  // const { reportId } = useParams(); // ルートが "/report/:reportId" の場合
-
-  const [report, setReport] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // ローディング状態を管理
+  const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // URLのクエリパラメータから ptnumber, page, search を取得
   const query = new URLSearchParams(location.search);
   const ptnumber = query.get('ptnumber') || '';
-  const page = query.get('page') || 1;
+  const page = parseInt(query.get('page'), 10) || 1;
   const search = query.get('search') || '';
 
   useEffect(() => {
@@ -26,24 +24,30 @@ const ReportDetail = () => {
     const fetchReport = async () => {
       setIsLoading(true);
       try {
-        console.log(`Fetching report with ID: ${id}`); // デバッグ用
-        const response = await axios.get(`/api/reports/${id}`, {
+        console.log(`Fetching report with ID: ${id}`);
+        const response = await axiosInstance.get(`/reports/${id}`, {
           signal: controller.signal,
         });
-        console.log('Response data:', response.data); // デバッグ用
-        
+        console.log('Response data:', response.data);
+
         if (!response.data) {
           throw new Error('不正なレスポンス構造');
         }
 
-        setReport(response.data);
+        setReport(response.data); // 修正: response.data.report ではなく response.data
         setError(null);
       } catch (error) {
         if (axios.isCancel(error)) {
           console.log('Request canceled:', error.message);
         } else {
           console.error('Error fetching report:', error);
-          setError('レポートを取得できませんでした。');
+          if (error.response) {
+            setError(error.response.data.error || 'レポートを取得できませんでした。');
+          } else if (error.request) {
+            setError('ネットワークエラーが発生しました。サーバーが正しく動作しているか確認してください。');
+          } else {
+            setError('予期せぬエラーが発生しました。');
+          }
         }
       } finally {
         setIsLoading(false);
@@ -58,7 +62,7 @@ const ReportDetail = () => {
   }, [id]);
 
   const handleBack = () => {
-    navigate(-1); // ブラウザの履歴を一つ戻る
+    navigate(-1);
   };
 
   if (isLoading) {
@@ -71,11 +75,31 @@ const ReportDetail = () => {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <p className="text-red-500">{error}</p>
+        <button
+          onClick={handleBack}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          戻る
+        </button>
+      </div>
+    );
   }
 
   if (!report) {
-    return <div className="text-red-500">レポートが見つかりません。</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <p className="text-red-500">レポートが見つかりません。</p>
+        <button
+          onClick={handleBack}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          戻る
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -86,7 +110,7 @@ const ReportDetail = () => {
           <span className="font-semibold">レポートID:</span> {report.id}
         </div>
         <div className="mb-4">
-          <span className="font-semibold">患者番号:</span> {ptnumber}
+          <span className="font-semibold">患者番号:</span> {report.ptnumber}
         </div>
         <div className="mb-4">
           <span className="font-semibold">検査日:</span>{" "}
@@ -103,6 +127,13 @@ const ReportDetail = () => {
         <div className="mb-4">
           <span className="font-semibold">部門:</span> {report.department || "N/A"}
         </div>
+        <div className="mb-2">
+              <span className="font-semibold">患者名:</span> {report.ptinfo.ptname || "N/A"}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">レポート:</span>
+              <pre className="whitespace-pre-wrap">{report.report || "N/A"}</pre>
+            </div>
         <div className="mb-4">
           <span className="font-semibold">画像診断:</span> {report.imagediag || "N/A"}
         </div>
@@ -115,7 +146,7 @@ const ReportDetail = () => {
             戻る
           </button>
           <button
-            onClick={() => navigate(`/ptinfos/${ptnumber}?page=${page}&search=${encodeURIComponent(search)}`)}
+            onClick={() => navigate(`/ptinfos/${report.ptnumber}?page=${page}&search=${encodeURIComponent(search)}`)}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
             患者詳細に戻る

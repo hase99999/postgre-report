@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { isValid, format } from 'date-fns'; // format を追加
 
 // ローカルタイムを "YYYY-MM-DDTHH:mm" 形式にフォーマットする関数
 const toLocalDateTime = (date) => {
@@ -33,7 +35,7 @@ const ScheduleDetail = () => {
     // スケジュールの詳細を取得
     const fetchSchedule = async () => {
       try {
-        const response = await axios.get(`/api/schedules/${id}`);
+        const response = await axiosInstance.get(`/schedules/${id}`);
         const scheduleData = response.data;
         setSchedule(scheduleData);
         // 日本時間に変換して設定
@@ -65,7 +67,7 @@ const ScheduleDetail = () => {
         ivrname,
       };
 
-      await axios.put(`/api/schedules/${id}`, scheduleData);
+      await axiosInstance.put(`/schedules/${id}`, scheduleData);
       console.log('Updated schedule:', scheduleData);
 
       navigate('/schedules', {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { startOfWeek, formatISO, isValid, parseISO } from 'date-fns';
 
@@ -18,7 +18,7 @@ const ScheduleForm = () => {
     const scheduleId = searchParams.get('id');
     if (scheduleId) {
       // Fetch existing schedule data and populate fields
-      axios.get(`/api/schedules/${scheduleId}`)
+      axiosInstance.get(`/schedules/${scheduleId}`)
         .then(response => {
           const schedule = response.data;
           setExamstartdatetime(schedule.examstartdatetime.substring(0,16)); // For input type="datetime-local"
@@ -58,10 +58,10 @@ const ScheduleForm = () => {
       };
 
       if (id) {
-        await axios.put(`/api/schedules/${id}`, scheduleData);
+        await axiosInstance.put(`/schedules/${id}`, scheduleData);
         console.log('Updated schedule:', scheduleData);
       } else {
-        await axios.post('/api/schedules', scheduleData);
+        await axiosInstance.post('/schedules', scheduleData);
         console.log('Added new schedule:', scheduleData);
       }
 

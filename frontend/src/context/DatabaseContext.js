@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const DatabaseContext = createContext();
 
@@ -11,47 +11,47 @@ export const DatabaseProvider = ({ children }) => {
   const [ptinfos, setPtinfos] = useState([]);
 
   const fetchReports = async () => {
-    const response = await axios.get('/reports');
+    const response = await axiosInstance.get('/reports');
     setReports(response.data);
   };
 
   const addReport = async (data) => {
-    const response = await axios.post('/reports', data);
+    const response = await axiosInstance.post('/reports', data);
     setReports([...reports, response.data]);
   };
 
   const updateReport = async (id, data) => {
-    const response = await axios.put(`/reports/${id}`, data);
+    const response = await axiosInstance.put(`/reports/${id}`, data);
     setReports(reports.map(report => (report.id === id ? response.data : report)));
   };
 
   const deleteReport = async (id) => {
-    await axios.delete(`/reports/${id}`);
+    await axiosInstance.delete(`/reports/${id}`);
     setReports(reports.filter(report => report.id !== id));
   };
 
   const fetchDoctors = async () => {
-    const response = await axios.get('/doctors');
+    const response = await axiosInstance.get('/doctors');
     setDoctors(response.data);
   };
 
   const addDoctor = async (data) => {
-    const response = await axios.post('/doctors', data);
+    const response = await axiosInstance.post('/doctors', data);
     setDoctors([...doctors, response.data]);
   };
 
   const updateDoctor = async (id, data) => {
-    const response = await axios.put(`/doctors/${id}`, data);
+    const response = await axiosInstance.put(`/doctors/${id}`, data);
     setDoctors(doctors.map(doctor => (doctor.id === id ? response.data : doctor)));
   };
 
   const deleteDoctor = async (id) => {
-    await axios.delete(`/doctors/${id}`);
+    await axiosInstance.delete(`/doctors/${id}`);
     setDoctors(doctors.filter(doctor => doctor.id !== id));
   };
 
   const fetchPtinfos = async () => {
-    const response = await axios.get('/ptinfos');
+    const response = await axiosInstance.get('/ptinfos');
     setPtinfos(response.data);
   };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const TeachingImport = () => {
   const [file, setFile] = useState(null);
@@ -11,74 +11,64 @@ const TeachingImport = () => {
     setMessage('');
   };
 
-  const handleImport = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!file) {
       setMessage('ファイルを選択してください。');
       return;
     }
-  
-    if (file.type !== 'application/json') {
-      setMessage('JSONファイルを選択してください。');
-      return;
-    }
-  
+
+    setIsUploading(true);
+    setMessage('');
+
     try {
-      setIsUploading(true);
-      const reader = new FileReader();
-  
-      reader.onload = async (event) => {
-        try {
-          const json = JSON.parse(event.target.result);
-          console.log('送信データ:', JSON.stringify(json, null, 2)); // データ確認用
-  
-          const records = Array.isArray(json.records) ? json.records : [json];
-  
-          // 各レコードに ptnumber が存在するか確認
-          records.forEach((record, index) => {
-            if (!record.ptnumber) {
-              console.warn(`Record ${index + 1} is missing ptnumber.`);
-            }
-          });
-  
-          const response = await axios.post('/api/teaching-files/import', { records });
-          setMessage(response.data.message || 'インポートに成功しました。');
-        } catch (error) {
-          console.error('インポートエラー:', error);
-          setMessage(error.response?.data?.error || 'インポート中にエラーが発生しました。');
-        } finally {
-          setIsUploading(false);
-        }
-      };
-  
-      reader.readAsText(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // トークンを取得（例: ローカルストレージから）
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage('認証トークンが見つかりません。ログインしてください。');
+        setIsUploading(false);
+        return;
+      }
+
+      // サーバーがポート3001で動作している場合、完全なURLを指定
+      const response = await axiosInstance.post('http://localhost:3001/api/teaching-files/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      setMessage(response.data.message || 'インポートに成功しました。');
     } catch (error) {
-      console.error('ファイル読み込みエラー:', error);
-      setMessage('ファイルの読み込み中にエラーが発生しました。');
+      console.error('インポートエラー:', error);
+      if (error.response) {
+        // サーバーからのレスポンスがある場合
+        setMessage(error.response.data.error || 'インポート中にエラーが発生しました。');
+      } else if (error.request) {
+        // リクエストは送信されたがレスポンスがない場合
+        setMessage('ネットワークエラーが発生しました。サーバーが正しく動作しているか確認してください。');
+      } else {
+        // その他のエラー
+        setMessage('エラーが発生しました。再試行してください。');
+      }
+    } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Teaching File をインポート</h2>
-      <div className="mb-4">
-        <input
-          type="file"
-          accept=".json"
-          onChange={handleFileChange}
-          className="p-2 border rounded"
-        />
-      </div>
-      <button
-        onClick={handleImport}
-        className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ${
-          isUploading ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-        disabled={isUploading}
-      >
-        {isUploading ? 'インポート中...' : 'インポート'}
-      </button>
-      {message && <p className="mt-4 text-red-500">{message}</p>}
+    <div>
+      <h2>データインポート</h2>
+      <form onSubmit={handleSubmit}>
+        <input type="file" accept=".json,.csv,.xml" onChange={handleFileChange} />
+        <button type="submit" disabled={isUploading}>
+          {isUploading ? 'インポート中...' : 'インポート'}
+        </button>
+      </form>
+      {message && <p>{message}</p>}
     </div>
   );
 };

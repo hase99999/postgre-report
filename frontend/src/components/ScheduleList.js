@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import {
   format,
@@ -78,7 +79,7 @@ const ScheduleList = () => {
   
         console.log('Fetching schedules:', { start, end }); // デバッグ用
   
-        const response = await axios.get('/api/schedules', {
+        const response = await axiosInstance.get('/schedules', {
           params: { start, end },
           signal: controller.signal,
         });
@@ -155,7 +156,7 @@ const ScheduleList = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/schedules/${id}`);
+      await axiosInstance.delete(`/api/schedules/${id}`);
       setSchedules(schedules.filter((schedule) => schedule.id !== id));
     } catch (error) {
       console.error('Error deleting schedule:', error);

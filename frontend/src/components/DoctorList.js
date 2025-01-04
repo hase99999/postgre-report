@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -20,7 +21,7 @@ const DoctorList = () => {
     if (pageParam && pageParam !== page.toString()) {
       setPage(parseInt(pageParam, 10));
     }
-  }, [location.search]);
+  }, [location.search, page]);
 
   useEffect(() => {
     let isMounted = true; // マウント状態を管理
@@ -28,20 +29,24 @@ const DoctorList = () => {
 
     const fetchDoctors = async () => {
       try {
-        console.log('Fetching doctors with page:', page); // デバッグ用
-        const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
-        const response = await axios.get('/api/doctors', {
-          params: { page, limit, _t: timestamp },
+        const response = await axiosInstance.get(`/doctors`, {
+          params: { page, limit },
           signal: controller.signal,
         });
         if (isMounted) {
-          console.log('Fetched doctors:', response.data); // デバッグ用
           setDoctors(response.data.doctors);
           setTotal(response.data.total);
         }
       } catch (error) {
-        if (error.name !== 'CanceledError') {
-          console.error('Error fetching doctors:', error.message); // エラーメッセージをログに出力
+        if (axios.isCancel(error)) {
+          console.log('Request canceled:', error.message);
+        } else {
+          console.error('Error fetching doctors:', error);
+          // 必要に応じてエラーハンドリングを追加
+        }
+      } finally {
+        if (isMounted) {
+          // ローディング状態の更新があればここに追加
         }
       }
     };
@@ -49,10 +54,10 @@ const DoctorList = () => {
     fetchDoctors();
 
     return () => {
-      isMounted = false; // アンマウント時に状態を更新
-      controller.abort(); // 不要なリクエストをキャンセル
+      isMounted = false;
+      controller.abort();
     };
-  }, [page, limit]); // pageまたはlimitが変更されたときに実行
+  }, [page, limit]);
 
   const handleRowClick = (docid) => {
     const targetPath = `/doctor/${docid}?page=${page}`;

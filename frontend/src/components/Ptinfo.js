@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const Ptinfo = () => {
   const [ptinfos, setPtinfos] = useState([]);
@@ -10,7 +10,7 @@ const Ptinfo = () => {
   useEffect(() => {
     const fetchPtinfos = async () => {
       try {
-        const response = await axios.get('/api/ptinfos', {
+        const response = await axiosInstance.get('/api/ptinfos', {
           params: { page, limit },
         });
         setPtinfos(response.data.ptinfos);

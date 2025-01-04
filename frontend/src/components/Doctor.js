@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const Doctor = () => {
   const [doctors, setDoctors] = useState([]);
@@ -7,7 +7,7 @@ const Doctor = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await axios.get('/api/doctors');
+      const response = await axiosInstance.get('/api/doctors');
       console.log('API response:', response.data);
       if (Array.isArray(response.data)) {
         setDoctors(response.data);
@@ -30,12 +30,12 @@ const Doctor = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.post('/api/doctors', form);
+    await axiosInstance.post('/api/doctors', form);
     fetchDoctors();
   };
 
   const handleDelete = async (id) => {
-    await axios.delete(`/api/doctors/${id}`);
+    await axiosInstance.delete(`/api/doctors/${id}`);
     fetchDoctors();
   };
 

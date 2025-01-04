@@ -4,14 +4,31 @@ import multer from 'multer';
 import xml2js from 'xml2js';
 import csv from 'csv-parser';
 import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
-const upload = multer({ dest: 'uploads/' });
+
+// Multerの設定にファイルサイズ制限とファイルタイプ検証を追加
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/json', 'text/csv', 'application/xml'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JSON, CSV, and XML are allowed.'));
+    }
+  },
+});
+
 const router = express.Router();
 
 // バッチサイズを設定
 const BATCH_SIZE = 1000;
 
-// CSV形式のデータをインポートするAPI
+/**
+ * CSV形式のデータをインポートするAPI
+ */
 router.post('/schedule/csv', upload.single('file'), async (req, res) => {
   try {
     const results = [];
@@ -60,12 +77,17 @@ router.post('/schedule/csv', upload.single('file'), async (req, res) => {
         }
       });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing CSV data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-// JSON形式のデータをインポートするAPI
+/**
+ * JSON形式のデータをインポートするAPI
+ */
 router.post('/schedule/json', upload.single('file'), async (req, res) => {
   try {
     const jsonData = fs.readFileSync(req.file.path, 'utf8');
@@ -105,14 +127,20 @@ router.post('/schedule/json', upload.single('file'), async (req, res) => {
     fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
     res.status(200).json({ message: 'JSON data imported successfully' });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing JSON data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-// JSONファイルから患者情報をインポートするAPI
-router.post('/import', async (req, res) => {
+
+/**
+ * JSONファイルから患者情報をインポートするAPI
+ */
+router.post('/import', upload.single('file'), async (req, res) => {
   try {
-    const jsonData = fs.readFileSync('path/to/your/jsonfile.json', 'utf8');
+    const jsonData = fs.readFileSync(req.file.path, 'utf8');
     const ptinfos = JSON.parse(jsonData);
 
     for (const ptinfo of ptinfos) {
@@ -124,13 +152,20 @@ router.post('/import', async (req, res) => {
       }
     }
 
+    fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
     res.status(200).json({ message: 'Ptinfo birth dates updated successfully' });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing ptinfo data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-// XML形式のデータをインポートするAPI
+
+/**
+ * XML形式のデータをインポートするAPI
+ */
 router.post('/schedule/xml', upload.single('file'), async (req, res) => {
   try {
     const xmlData = fs.readFileSync(req.file.path, 'utf8');
@@ -189,12 +224,17 @@ router.post('/schedule/xml', upload.single('file'), async (req, res) => {
       }
     });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing XML data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-// XMLファイルからレポート情報をインポートするAPI
+/**
+ * XMLファイルからレポート情報をインポートするAPI
+ */
 router.post('/report/xml', upload.single('file'), async (req, res) => {
   try {
     console.log('Received file:', req.file); // デバッグ情報を追加
@@ -219,7 +259,9 @@ router.post('/report/xml', upload.single('file'), async (req, res) => {
         for (const report of reports) {
           let inputtime;
           try {
-            inputtime = report.inputtime ? new Date(`1970-01-01T${report.inputtime}Z`) : null;
+            inputtime = report.inputtime
+              ? new Date(`1970-01-01T${report.inputtime}Z`)
+              : null;
             if (isNaN(inputtime.getTime())) {
               throw new Error('Invalid date');
             }
@@ -256,13 +298,17 @@ router.post('/report/xml', upload.single('file'), async (req, res) => {
       }
     });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing XML data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-
-// JSONファイルからレポート情報をインポートするAPI
+/**
+ * JSONファイルからレポート情報をインポートするAPI
+ */
 router.post('/report/json', upload.single('file'), async (req, res) => {
   try {
     console.log('Received JSON file:', req.file); // デバッグ情報を追加
@@ -276,7 +322,7 @@ router.post('/report/json', upload.single('file'), async (req, res) => {
           examdate: new Date(report.examdate),
           ptnumber: parseInt(report.ptnumber),
           modality: report.modality,
-          doctor: report.doctor ,
+          doctor: report.doctor,
           department: report.department,
           clinicaldiag: report.clinicaldiag,
           imagediag: report.imagediag,
@@ -294,8 +340,12 @@ router.post('/report/json', upload.single('file'), async (req, res) => {
     fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
     res.status(200).json({ message: 'JSON data imported successfully' });
   } catch (err) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+    }
     console.error('Error importing JSON data:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 export default router;
