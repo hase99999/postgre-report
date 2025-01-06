@@ -68,6 +68,11 @@ const Home = () => {
         <Link to="/import-teaching-file" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
         Teaching File をインポート
         </Link>
+        <Link to="/teachingFiles">
+          <button className="w-full bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 transition duration-300">
+            TeachingFile 一覧を見る
+          </button>
+        </Link>
       </div>
     </div>
   );

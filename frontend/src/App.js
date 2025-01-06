@@ -21,6 +21,8 @@ import ScheduleForm from './components/ScheduleForm';
 import Logout from './components/Logout';
 import FetchAndSaveData from './components/FetchAndSaveData';
 import TeachingImport from './components/TeachingImport';
+import TeachingFileList from './components/TeachingFileList';
+import TeachingFileDetail from './components/TeachingFileDetail';
 
 function App() {
   return (
@@ -163,7 +165,8 @@ function App() {
           
           <Route path="/import" element={<Navigate to="/ptinfo-import" replace />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
-          
+          <Route path="/teachingFiles" element={<TeachingFileList />} />
+          <Route path="/teachingFiles/:id" element={<TeachingFileDetail />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -32,14 +32,15 @@ app.use(express.urlencoded({ limit: '50mb', extended: true })); // URLエンコ�
 app.use(express.static(path.resolve('public'))); // pathを定義
 
 // ルートの登録
-app.use('/api/import', authMiddleware, importRoutes); // ptinfoのインポート
-app.use('/api/teaching-files', authMiddleware, teachingFilesRoutes); // TeachingFileのインポート
-app.use('/api/fetch-4d-data', fetchAndSaveDataRoutes); // このルートが認証不要の場合
-app.use('/api/doctors', authMiddleware, doctorRoutes);
-app.use('/api/ptinfos', authMiddleware, ptinfoRoutes);
-app.use('/api/reports', authMiddleware, reportRoutes);
-app.use('/api/schedules', authMiddleware, scheduleRoutes);
-app.use('/api/auth', authRoutes); // 認証ルート
+app.use('/api/import', importRoutes);
+app.use('/api/teachingFiles', teachingFilesRoutes);
+app.use('/api/fetchAndSaveData', fetchAndSaveDataRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/ptinfo', ptinfoRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/auth', authRoutes);
+
 
 // フロントエンドの静的ファイルを提供
 app.use(express.static(path.resolve('public')));
