@@ -13,7 +13,7 @@ const TeachingFileDetail = () => {
   useEffect(() => {
     const fetchTeachingFile = async () => {
       try {
-        const response = await axiosInstance.get(`/api/teachingFiles/${id}`);
+        const response = await axiosInstance.get(`/teachingFiles/${id}`);
         setTeachingFile(response.data);
       } catch (error) {
         console.error('TeachingFileの取得中にエラーが発生しました:', error);

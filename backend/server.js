@@ -36,7 +36,7 @@ app.use('/api/import', importRoutes);
 app.use('/api/teachingFiles', teachingFilesRoutes);
 app.use('/api/fetchAndSaveData', fetchAndSaveDataRoutes);
 app.use('/api/doctors', doctorRoutes);
-app.use('/api/ptinfo', ptinfoRoutes);
+app.use('/api/ptinfos', ptinfoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/auth', authRoutes);

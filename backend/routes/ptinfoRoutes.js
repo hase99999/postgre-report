@@ -179,14 +179,24 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const ptinfos = await prisma.ptinfo.findMany({
       where: {
-        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
+        OR: [
+          { ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined },
+          { ptname: { contains: searchTerm, mode: 'insensitive' } },
+          { ptage: searchTerm ? parseInt(searchTerm, 10) : undefined },
+          // 必要に応じて他の検索条件を追加
+        ],
       },
       skip: parseInt(skip, 10),
       take: parseInt(limit, 10),
     });
     const total = await prisma.ptinfo.count({
       where: {
-        ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined,
+        OR: [
+          { ptnumber: searchTerm ? parseInt(searchTerm, 10) : undefined },
+          { ptname: { contains: searchTerm, mode: 'insensitive' } },
+          { ptage: searchTerm ? parseInt(searchTerm, 10) : undefined },
+          // 必要に応じて他の検索条件を追加
+        ],
       },
     });
 

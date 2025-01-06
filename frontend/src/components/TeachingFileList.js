@@ -12,7 +12,7 @@ const TeachingFileList = () => {
 
   const fetchTeachingFiles = async (page) => {
     try {
-      const response = await axiosInstance.get('/api/teachingFiles', {
+      const response = await axiosInstance.get('/teachingFiles', {
         params: { page: page, limit: 20 },
       });
       setTeachingFiles(response.data.data);
