@@ -1,15 +1,18 @@
 import express from 'express';
-import fs from 'fs';
 import multer from 'multer';
 import xml2js from 'xml2js';
 import csv from 'csv-parser';
 import { PrismaClient } from '@prisma/client';
+import { importTeachingFiles } from '../controllers/teachingFileController.js'; // 追加
+import { Readable } from 'stream';
 
 const prisma = new PrismaClient();
+const router = express.Router();
 
-// Multerの設定にファイルサイズ制限とファイルタイプ検証を追加
+// Multerのメモリストレージ設定
+const storage = multer.memoryStorage();
 const upload = multer({
-  dest: 'uploads/',
+  storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['application/json', 'text/csv', 'application/xml'];
@@ -21,19 +24,39 @@ const upload = multer({
   },
 });
 
-const router = express.Router();
-
 // バッチサイズを設定
 const BATCH_SIZE = 1000;
+
+/**
+ * TeachingFileにJSONデータをインポートするAPI
+ */
+router.post('/import', upload.single('file'), importTeachingFiles);
 
 /**
  * CSV形式のデータをインポートするAPI
  */
 router.post('/schedule/csv', upload.single('file'), async (req, res) => {
   try {
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信したCSVファイル:', req.file.originalname);
+    console.log('ファイルサイズ:', req.file.size);
+    console.log('ファイルタイプ:', req.file.mimetype);
+
     const results = [];
-    fs.createReadStream(req.file.path)
-      .pipe(csv())
+    const csvParser = csv();
+
+    // Readableストリームを作成してfile.bufferをパイプ
+    const readableFile = new Readable();
+    readableFile._read = () => {}; // no-op
+    readableFile.push(req.file.buffer);
+    readableFile.push(null);
+
+    readableFile
+      .pipe(csvParser)
       .on('data', (data) => results.push(data))
       .on('end', async () => {
         try {
@@ -69,12 +92,15 @@ router.post('/schedule/csv', upload.single('file'), async (req, res) => {
             });
           }
 
-          fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-          res.status(200).json({ message: 'CSV data imported successfully' });
+          res.status(200).json({ message: 'CSV data imported successfully', count: validSchedules.length });
         } catch (err) {
           console.error('Error importing CSV data:', err);
           res.status(500).json({ error: 'Internal Server Error' });
         }
+      })
+      .on('error', (error) => {
+        console.error('CSVのパース中にエラーが発生しました:', error.message);
+        res.status(500).json({ error: 'CSVのパース中にエラーが発生しました。' });
       });
   } catch (err) {
     if (err.code === 'LIMIT_FILE_SIZE') {
@@ -90,9 +116,19 @@ router.post('/schedule/csv', upload.single('file'), async (req, res) => {
  */
 router.post('/schedule/json', upload.single('file'), async (req, res) => {
   try {
-    const jsonData = fs.readFileSync(req.file.path, 'utf8');
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信したJSONファイル:', req.file.originalname);
+    console.log('ファイルサイズ:', req.file.size);
+    console.log('ファイルタイプ:', req.file.mimetype);
+
+    const jsonData = req.file.buffer.toString('utf8');
     const schedules = JSON.parse(jsonData);
     const validSchedules = [];
+
     for (const schedule of schedules) {
       const ptnumber = parseInt(schedule.ptid);
       if (isNaN(ptnumber)) {
@@ -124,8 +160,7 @@ router.post('/schedule/json', upload.single('file'), async (req, res) => {
       });
     }
 
-    fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-    res.status(200).json({ message: 'JSON data imported successfully' });
+    res.status(200).json({ message: 'JSON data imported successfully', count: validSchedules.length });
   } catch (err) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
@@ -138,9 +173,18 @@ router.post('/schedule/json', upload.single('file'), async (req, res) => {
 /**
  * JSONファイルから患者情報をインポートするAPI
  */
-router.post('/import', upload.single('file'), async (req, res) => {
+router.post('/patient-import', upload.single('file'), async (req, res) => {
   try {
-    const jsonData = fs.readFileSync(req.file.path, 'utf8');
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信した患者情報ファイル:', req.file.originalname);
+    console.log('ファイルサイズ:', req.file.size);
+    console.log('ファイルタイプ:', req.file.mimetype);
+
+    const jsonData = req.file.buffer.toString('utf8');
     const ptinfos = JSON.parse(jsonData);
 
     for (const ptinfo of ptinfos) {
@@ -150,10 +194,10 @@ router.post('/import', upload.single('file'), async (req, res) => {
           data: { birth: new Date(ptinfo.birth) },
         });
       }
+      // 他のフィールドの処理が必要ならここに追加
     }
 
-    fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-    res.status(200).json({ message: 'Ptinfo birth dates updated successfully' });
+    res.status(200).json({ message: 'Ptinfo birth dates updated successfully', count: ptinfos.length });
   } catch (err) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
@@ -168,7 +212,16 @@ router.post('/import', upload.single('file'), async (req, res) => {
  */
 router.post('/schedule/xml', upload.single('file'), async (req, res) => {
   try {
-    const xmlData = fs.readFileSync(req.file.path, 'utf8');
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('受信したXMLファイル:', req.file.originalname);
+    console.log('ファイルサイズ:', req.file.size);
+    console.log('ファイルタイプ:', req.file.mimetype);
+
+    const xmlData = req.file.buffer.toString('utf8');
     const parser = new xml2js.Parser({ explicitArray: false });
 
     parser.parseString(xmlData, async (err, result) => {
@@ -177,7 +230,7 @@ router.post('/schedule/xml', upload.single('file'), async (req, res) => {
         return res.status(500).json({ error: 'Error parsing XML data' });
       }
 
-      const schedules = result.Root.Schedule; // XMLの構造に応じて調整
+      const schedules = result.Root?.Schedule; // XMLの構造に応じて調整
       if (!schedules) {
         console.error('No schedules found in XML data');
         return res.status(400).json({ error: 'No schedules found in XML data' });
@@ -216,8 +269,7 @@ router.post('/schedule/xml', upload.single('file'), async (req, res) => {
           });
         }
 
-        fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-        res.status(200).json({ message: 'XML data imported successfully' });
+        res.status(200).json({ message: 'XML data imported successfully', count: validSchedules.length });
       } catch (err) {
         console.error('Error importing XML data:', err);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -237,8 +289,13 @@ router.post('/schedule/xml', upload.single('file'), async (req, res) => {
  */
 router.post('/report/xml', upload.single('file'), async (req, res) => {
   try {
-    console.log('Received file:', req.file); // デバッグ情報を追加
-    const xmlData = fs.readFileSync(req.file.path, 'utf8');
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('Received XML file:', req.file.originalname); // デバッグ情報を追加
+    const xmlData = req.file.buffer.toString('utf8');
     const parser = new xml2js.Parser({ explicitArray: false });
 
     parser.parseString(xmlData, async (err, result) => {
@@ -290,7 +347,6 @@ router.post('/report/xml', upload.single('file'), async (req, res) => {
           });
         }
 
-        fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
         res.status(200).json({ message: 'XML data imported successfully' });
       } catch (err) {
         console.error('Error importing XML data:', err);
@@ -311,8 +367,13 @@ router.post('/report/xml', upload.single('file'), async (req, res) => {
  */
 router.post('/report/json', upload.single('file'), async (req, res) => {
   try {
-    console.log('Received JSON file:', req.file); // デバッグ情報を追加
-    const jsonData = fs.readFileSync(req.file.path, 'utf8');
+    if (!req.file) {
+      console.log('ファイルがアップロードされていません。');
+      return res.status(400).json({ error: 'ファイルがアップロードされていません。' });
+    }
+
+    console.log('Received JSON file:', req.file.originalname); // デバッグ情報を追加
+    const jsonData = req.file.buffer.toString('utf8');
     const reports = JSON.parse(jsonData);
 
     for (const report of reports) {
@@ -337,8 +398,7 @@ router.post('/report/json', upload.single('file'), async (req, res) => {
       });
     }
 
-    fs.unlinkSync(req.file.path); // アップロードされたファイルを削除
-    res.status(200).json({ message: 'JSON data imported successfully' });
+    res.status(200).json({ message: 'JSON data imported successfully', count: reports.length });
   } catch (err) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });

@@ -1,9 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import { PrismaClient } from '@prisma/client';
+import path from 'node:path'; // 追加
 
 import importRoutes from './routes/importRoutes.js';
+import teachingFilesRoutes from './routes/teachingFilesRoutes.js';
 import fetchAndSaveDataRoutes from './routes/fetchAndSaveDataRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import ptinfoRoutes from './routes/ptinfoRoutes.js';
@@ -27,14 +28,17 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // JSONボディのパースとサイズ制限
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // URLエンコードされたボディのパースとサイズ制限
 
-// 認証が必要なルートにのみ authMiddleware を適用
-app.use('/api/teaching-files', authMiddleware, importRoutes);
+// 静的ファイルの提供
+app.use(express.static(path.resolve('public'))); // pathを定義
+
+// ルートの登録
+app.use('/api/import', authMiddleware, importRoutes); // ptinfoのインポート
+app.use('/api/teaching-files', authMiddleware, teachingFilesRoutes); // TeachingFileのインポート
 app.use('/api/fetch-4d-data', fetchAndSaveDataRoutes); // このルートが認証不要の場合
 app.use('/api/doctors', authMiddleware, doctorRoutes);
 app.use('/api/ptinfos', authMiddleware, ptinfoRoutes);
 app.use('/api/reports', authMiddleware, reportRoutes);
 app.use('/api/schedules', authMiddleware, scheduleRoutes);
-app.use('/api/import', authMiddleware, importRoutes);
 app.use('/api/auth', authRoutes); // 認証ルート
 
 // フロントエンドの静的ファイルを提供
