@@ -1,16 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // useState と useEffect を追加
 import { Link, useNavigate } from 'react-router-dom';
 
 const Home = () => {
-  const employeeNumber = localStorage.getItem('employeeNumber');
-  const employeeName = localStorage.getItem('employeeName');
-  const token = localStorage.getItem('token');
+  const [doctor, setDoctor] = useState(null);
+  const [token, setToken] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedDoctor = localStorage.getItem('doctor');
+    const storedToken = localStorage.getItem('token');
+    if (storedDoctor) {
+      try {
+        const parsedDoctor = JSON.parse(storedDoctor);
+        setDoctor(parsedDoctor);
+        console.log('Doctor object:', parsedDoctor); // デバッグ用ログ
+      } catch (err) {
+        console.error('Doctor データの解析に失敗しました:', err);
+      }
+    }
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
+
+  const employeeNumber = doctor?.employeeNumber || doctor?.employee_number || 'N/A';
+  const employeeName = doctor?.docname || doctor?.employeeName || doctor?.employee_name || doctor?.name || 'N/A';
 
   const handleLogout = () => {
     localStorage.removeItem('token'); // トークンを削除
-    localStorage.removeItem('employeeNumber'); // その他のユーザー情報を削除
-    localStorage.removeItem('employeeName');
+    localStorage.removeItem('doctor'); // doctorオブジェクトを削除
     navigate('/login'); // ログインページにリダイレクト
   };
 
@@ -23,7 +41,9 @@ const Home = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-2 text-white">ホーム</h1>
-          <p className="text-white">ログイン者: {employeeNumber} - {employeeName}</p>
+          <p className="text-white">
+            ログイン者: {employeeNumber ? `${employeeNumber} - ${employeeName}` : '未ログイン'}
+          </p>
         </div>
         <div>
           {!token ? (
