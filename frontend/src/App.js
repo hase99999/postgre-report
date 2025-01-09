@@ -23,6 +23,9 @@ import FetchAndSaveData from './components/FetchAndSaveData';
 import TeachingImport from './components/TeachingImport';
 import TeachingFileList from './components/TeachingFileList';
 import TeachingFileDetail from './components/TeachingFileDetail';
+import DicomImport from './components/DicomImport'; 
+import DicomList from './components/DicomList';
+import DicomDetail from './components/DicomDetail';
 
 function App() {
   return (
@@ -167,6 +170,9 @@ function App() {
           <Route path="*" element={<Navigate to="/home" replace />} />
           <Route path="/teachingFiles" element={<TeachingFileList />} />
           <Route path="/teachingFiles/:id" element={<TeachingFileDetail />} />
+          <Route path="/import-dicom" element={<DicomImport />} />
+          <Route path="/dicoms" element={<DicomList />} />
+          <Route path="/dicoms/:id" element={<DicomDetail />} />
         </Routes>
       </Router>
     </AuthProvider>

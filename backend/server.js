@@ -10,6 +10,7 @@ import doctorRoutes from './routes/doctorRoutes.js';
 import ptinfoRoutes from './routes/ptinfoRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import scheduleRoutes from './routes/scheduleRoutes.js';
+import dicomRoutes from './routes/dicomRoutes.js'; 
 import authRoutes from './routes/authRoutes.js';
 import authMiddleware from './middleware/authMiddleware.js';
 
@@ -25,8 +26,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' })); // JSONボディのパースとサイズ制限
-app.use(express.urlencoded({ limit: '50mb', extended: true })); // URLエンコードされたボディのパースとサイズ制限
+app.use(express.json({ limit: '200mb' })); // JSONボディのパースとサイズ制限
+app.use(express.urlencoded({ limit: '200mb', extended: true })); // URLエンコードされたボディのパースとサイズ制限
 
 // 静的ファイルの提供
 app.use(express.static(path.resolve('public'))); // pathを定義
@@ -39,19 +40,17 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/ptinfos', ptinfoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/dicom', dicomRoutes);
 app.use('/api/auth', authRoutes);
 
 
-// フロントエンドの静的ファイルを提供
-app.use(express.static(path.resolve('public')));
-
-// エラーハンドリングミドルウェア
+// エラーハンドリングミドルウェアの追加（上記server.jsの例参照）
 app.use((err, req, res, next) => {
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'ファイルサイズが大きすぎます。最大許容量は50MBです。' });
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ message: 'リクエストボディが大きすぎます。' });
   }
-  console.error('Unhandled Error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error(err); // サーバー側の詳細なログ
+  res.status(500).json({ message: '内部サーバーエラーが発生しました。' });
 });
 
 const PORT = 3001;

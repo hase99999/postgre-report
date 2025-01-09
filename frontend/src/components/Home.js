@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // useState と useEffect を追加
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Home = () => {
@@ -32,17 +32,13 @@ const Home = () => {
     navigate('/login'); // ログインページにリダイレクト
   };
 
-  const handleTeachingImportClick = () => {
-    navigate('/import-teaching-file');
-  };
-
   return (
     <div className="bg-red-500 min-h-screen p-4">
       <header className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-2 text-white">ホーム</h1>
           <p className="text-white">
-            ログイン者: {employeeNumber ? `${employeeNumber} - ${employeeName}` : '未ログイン'}
+            ログイン者: {employeeNumber !== 'N/A' && employeeName !== 'N/A' ? `${employeeNumber} - ${employeeName}` : '未ログイン'}
           </p>
         </div>
         <div>
@@ -57,43 +53,50 @@ const Home = () => {
           )}
         </div>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Link to="/reports" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          レポート一覧
-        </Link>
-        <Link to="/doctors" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          ドクター一覧
-        </Link>
-        <Link to="/ptinfos" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          患者情報一覧
-        </Link>
-        <Link to="/ptinfo-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          患者情報インポート
-        </Link>
-        <Link to="/report-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          レポートインポート
-        </Link>
-        <Link to="/doctor-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          ドクターインポート
-        </Link>
-        <Link to="/schedule-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          スケジュールインポート
-        </Link>
-        <Link to="/schedules" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          スケジュール一覧
-        </Link>
-        <Link to="/fetch-and-save" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-          4Dデータベースからデータをフェッチして保存
-        </Link>
-        <Link to="/import-teaching-file" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
-        Teaching File をインポート
-        </Link>
-        <Link to="/teachingFiles">
-          <button className="w-full bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 transition duration-300">
+      <main>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Link to="/reports" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            レポート一覧
+          </Link>
+          <Link to="/doctors" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            ドクター一覧
+          </Link>
+          <Link to="/ptinfos" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            患者情報一覧
+          </Link>
+          <Link to="/ptinfo-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            患者情報インポート
+          </Link>
+          <Link to="/report-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            レポートインポート
+          </Link>
+          <Link to="/doctor-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            ドクターインポート
+          </Link>
+          <Link to="/schedule-import" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            スケジュールインポート
+          </Link>
+          <Link to="/schedules" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            スケジュール一覧
+          </Link>
+          <Link to="/fetch-and-save" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            4Dデータベースからデータをフェッチして保存
+          </Link>
+          <Link to="/import-teaching-file" className="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600">
+            Teaching File をインポート
+          </Link>
+          <Link to="/teachingFiles" className="w-full bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 transition duration-300 flex items-center justify-center">
             TeachingFile 一覧を見る
-          </button>
-        </Link>
-      </div>
+          </Link>
+          <Link to="/import-dicom" className="w-full bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 transition duration-300 flex items-center justify-center">
+            Dicom Import
+          </Link>
+          {/* Dicom 一覧画面へのリンクを追加 */}
+          <Link to="/dicoms" className="w-full bg-green-500 text-white p-4 rounded shadow hover:bg-green-600 transition duration-300 flex items-center justify-center">
+            Dicom 一覧を見る
+          </Link>
+        </div>
+      </main>
     </div>
   );
 };
