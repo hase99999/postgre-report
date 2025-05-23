@@ -19,7 +19,7 @@ const prisma = new PrismaClient();
 
 // CORS設定
 const corsOptions = {
-  origin: 'http://localhost:3000', // フロントエンドのURL
+  origin: ['http://localhost:3000', 'http://192.168.11.5:3000'], // 複数のオリジンを許可
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200,

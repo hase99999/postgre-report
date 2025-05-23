@@ -7,7 +7,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.0",
+    "@prisma/client": "^6.8.2",
     "bcrypt": "^5.0.1",
     "csv-parser": "^3.0.0",
     "date-fns": "^4.1.0",
@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.12",
-    "prisma": "^6.2.0"
+    "prisma": "^6.8.2"
   }
 }

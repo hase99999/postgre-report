@@ -1,31 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Ptinfo {
-  id            Int            @id @default(autoincrement())
   ptnumber      Int            @unique
   ptname        String
   ptage         Int
-  birth         DateTime?
   sex           String
+  id            Int            @id @default(autoincrement())
+  birth         DateTime?
+  dicoms        Dicom[]        @relation("PtinfoDicoms")
   reports       Report[]       @relation("PtinfoReports")
   schedules     Schedule[]     @relation("PtinfoSchedules")
   teachingFiles teachingFile[] @relation("PtinfoTeachingFiles")
-dicoms        Dicom[]        @relation("PtinfoDicoms")
 }
 
 model Report {
-  id           Int      @id @default(autoincrement())
   examdate     DateTime
   ptnumber     Int
   modality     String?
-  doctor       String?
   department   String
   clinicaldiag String
   imagediag    String
@@ -36,35 +34,36 @@ model Report {
   inputdate    DateTime
   site         String
   inputtime    DateTime
-  ptinfo       Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoReports")
+  id           Int      @id @default(autoincrement())
+  doctor       String?
+  ptinfo       Ptinfo   @relation("PtinfoReports", fields: [ptnumber], references: [ptnumber])
 }
 
 model Doctor {
-  docid          Int    @id @default(autoincrement())
   docname        String
   department     String
   password       String
-  hospital       String
   level          Int
-  employeeNumber String  @unique
+  docid          Int    @id @default(autoincrement())
+  hospital       String
+  employeeNumber String @unique
 }
 
 model Schedule {
   id                Int      @id @default(autoincrement())
-  examstartdatetime DateTime
-  examenddatetime   DateTime
-  ptnumber          Int
   department        String
   doctor            String
+  ptnumber          Int
+  inputter          String?
   ivrname           String?
   memo              String?
-  inputter          String?
-  ptinfo            Ptinfo?  @relation(fields: [ptnumber], references: [ptnumber], name: "PtinfoSchedules")
+  examenddatetime   DateTime
+  examstartdatetime DateTime
+  ptinfo            Ptinfo   @relation("PtinfoSchedules", fields: [ptnumber], references: [ptnumber])
 }
 
 model teachingFile {
   id              Int      @id @default(autoincrement())
-  seaquentail     Int   @unique
   site            String
   field           String
   ptnumber        Int
@@ -78,8 +77,8 @@ model teachingFile {
   difficultylevel Int
   pathology       String
   publication     Boolean
-
-  ptinfo Ptinfo @relation("PtinfoTeachingFiles", fields: [ptnumber], references: [ptnumber])
+  seaquential     String   @unique
+  ptinfo          Ptinfo   @relation("PtinfoTeachingFiles", fields: [ptnumber], references: [ptnumber])
 }
 
 model Dicom {
@@ -90,6 +89,5 @@ model Dicom {
   modality   String
   image_num  Int
   seriespath String
-
-ptinfo     Ptinfo   @relation("PtinfoDicoms", fields: [pt_ID], references: [ptnumber])
+  ptinfo     Ptinfo   @relation("PtinfoDicoms", fields: [pt_ID], references: [ptnumber])
 }

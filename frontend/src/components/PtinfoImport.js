@@ -27,17 +27,17 @@ const PtinfoImport = () => {
     switch(fileType) {
       case 'json':
         file = jsonFile;
-        endpoint = '/ptinfos/import/json';
+        endpoint = 'ptinfos/import/json';
         successMessage = 'JSONデータのインポートが成功しました。';
         break;
       case 'csv':
         file = csvFile;
-        endpoint = '/ptinfos/import/csv';
+        endpoint = 'ptinfos/import/csv';
         successMessage = 'CSVデータが正常にインポートされました。';
         break;
       case 'xml':
         file = xmlFile;
-        endpoint = '/ptinfos/import/xml';
+        endpoint = 'ptinfos/import/xml';
         successMessage = 'XMLデータが正常にインポートされました。';
         break;
       default:
