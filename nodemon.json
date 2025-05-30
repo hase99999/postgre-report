@@ -1,5 +1,0 @@
-{
-    "watch": ["backend/src", "backend/routes", "backend/middleware"],
-    "ignore": ["backend/uploads/**/*", "logs/**/*"],
-    "ext": "js,json"
-  }

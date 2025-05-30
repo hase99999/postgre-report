@@ -3,9 +3,7 @@ import axios from 'axios';
 // Axiosインスタンスの作成
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:3001/api', // バックエンドのベースURL
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 300000, // 5分に延長
 });
 
 // リクエストインターセプターでAuthorizationヘッダーを追加

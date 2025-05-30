@@ -10,7 +10,7 @@ datasource db {
 model Ptinfo {
   ptnumber      Int            @unique
   ptname        String
-  ptage         Int
+  ptage         Int?
   sex           String
   id            Int            @id @default(autoincrement())
   birth         DateTime?
