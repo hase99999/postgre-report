@@ -119,7 +119,6 @@ const splitJsonFile = async (file) => {
     }
   };
 
-  // ファイルサイズに応じて適切なエンドポイントを選択するアップロード関数
   // ファイルアップロード処理の強化
 const handleFileUpload = async (file, fileType) => {
   if (!file) return null;
@@ -148,21 +147,69 @@ const handleFileUpload = async (file, fileType) => {
             throw new Error('ファイルの分割に失敗しました');
           }
           
-          setMessage(`ファイルを${chunks.length}個のチャンクに分割しました`);
+          setMessage(`ファイルを${chunks.length}個のチャンクに分割しました。順次処理します...`);
           
-          // 最初のチャンクを処理
-          const firstChunk = chunks[0];
+          // ここから修正：すべてのチャンクを順次処理
+          const results = [];
+          let successCount = 0;
+          let failCount = 0;
+          let processedRecords = 0;
           
-          // チャンクサイズの表示を追加
-          const chunkSizeMB = (firstChunk.sizeBytes / (1024 * 1024)).toFixed(2);
-          alert(`ファイルを${chunks.length}個のチャンクに分割しました。最初のチャンク (${firstChunk.recordCount}件, ${chunkSizeMB}MB) を処理します。`);
+          // 進捗状況の更新用
+          const totalChunks = chunks.length;
+          const totalRecords = chunks.reduce((sum, chunk) => sum + chunk.recordCount, 0);
           
-          if (firstChunk.sizeBytes <= FILE_SIZE_THRESHOLD) {
-            return await uploadSingleFile(firstChunk.file, 'ptinfos/import/json-small');
-          } else {
-            alert(`警告: 分割後のチャンクサイズが5MBを超えています (${chunkSizeMB}MB)。サンプルテストモードに切り替えます。`);
-            return await uploadSingleFile(firstChunk.file, 'ptinfos/import/json-robust');
+          for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            const chunkSizeMB = (chunk.sizeBytes / (1024 * 1024)).toFixed(2);
+            
+            setMessage(`チャンク ${i+1}/${totalChunks} を処理中 (${chunk.recordCount}件, ${chunkSizeMB}MB)...`);
+            
+            try {
+              const endpoint = chunk.sizeBytes <= FILE_SIZE_THRESHOLD 
+                ? 'ptinfos/import/json-small' 
+                : 'ptinfos/import/json-robust';
+              
+              const result = await uploadSingleFile(chunk.file, endpoint);
+              
+              if (result) {
+                results.push(result);
+                successCount++;
+                
+                // 成功したレコード数を加算
+                if (result.processed) {
+                  processedRecords += result.processed;
+                } else {
+                  // processed情報がない場合は推定
+                  processedRecords += chunk.recordCount;
+                }
+                
+                setMessage(`チャンク ${i+1}/${totalChunks} 完了。これまでに ${processedRecords}/${totalRecords} レコードを処理しました。`);
+              }
+            } catch (err) {
+              console.error(`チャンク ${i+1} の処理中にエラーが発生:`, err);
+              failCount++;
+              
+              // エラーがあってもプロセスを続行
+              setMessage(`チャンク ${i+1} のエラー: ${err.message}. 次のチャンクに進みます...`);
+              
+              // オプション：ユーザーに続行の確認
+              if (failCount >= 3 && !window.confirm('複数のエラーが発生しています。処理を続行しますか？')) {
+                break;
+              }
+            }
+            
+            // 最後のチャンク以外は少し待機（サーバー負荷軽減）
+            if (i < chunks.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
           }
+          
+          return {
+            status: 'bulk_import_completed',
+            message: `ファイル分割インポート完了: ${successCount}チャンク成功, ${failCount}チャンク失敗, ${processedRecords}レコード処理`,
+            results: results
+          };
         } catch (err) {
           alert(`ファイル分割処理中にエラーが発生しました: ${err.message}`);
           return null;
@@ -281,18 +328,19 @@ const uploadSingleFile = async (file, endpoint, retries = 3, delay = 2000) => {
       // 新しいアップロード関数を使用
       const result = await handleFileUpload(file, fileType);
       
-      if (result) {
-        // 結果の種類によって異なるメッセージを表示
-        if (result.status === 'sample_test_completed') {
-          setMessage(`サンプルテスト完了: ${result.message}`);
-          alert(`サンプルテスト完了: ${result.message}`);
-        } else {
-          setMessage(successMessage);
-          alert(successMessage);
-        }
-      } else {
-        setMessage('アップロード処理中に問題が発生しました。');
-      }
+     if (result) {
+  // 結果の種類によって異なるメッセージを表示
+  if (result.status === 'sample_test_completed') {
+    setMessage(`サンプルテスト完了: ${result.message}`);
+    alert(`サンプルテスト完了: ${result.message}`);
+  } else if (result.status === 'bulk_import_completed') {
+    setMessage(result.message);
+    alert(result.message);
+  } else {
+    setMessage(successMessage);
+    alert(successMessage);
+  }
+}
     } catch (error) {
       console.error(`${fileType.toUpperCase()}データのインポート中にエラーが発生しました:`, error);
       
